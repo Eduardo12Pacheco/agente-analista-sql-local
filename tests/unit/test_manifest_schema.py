@@ -148,6 +148,7 @@ def test_relationships_must_resolve_to_documented_columns() -> None:
     ("field", "value", "message"),
     [
         ("duckdb_file", "/absolute/warehouse.duckdb", "relative"),
+        ("duckdb_file", r"\absolute\warehouse.duckdb", "relative"),
         ("duckdb_file", r"C:\absolute\warehouse.duckdb", "relative"),
         ("duckdb_file", r"\\server\share\warehouse.duckdb", "relative"),
         ("duckdb_file", "../escape.duckdb", "escape"),

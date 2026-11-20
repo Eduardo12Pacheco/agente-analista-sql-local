@@ -1,0 +1,6 @@
+id,description,quantity,unit_id,unit_name,unit_scheme,unit_value_amount,unit_value_currency,classification_id,classification_scheme,classification_description,main_ocid,main_id,tender_id,relatedLot
+item-1,LAPIZ   NEGRO,10,u,UNIDAD,,0.5,USD,CPC-1,CPC,Lápices,ocds-5wno2w-CE-20210000000001-1001,CE-20210000000001-1001,COD-1,
+item-2,  PAPEL  ,2,p,PAQUETE,,3.25,USD,CPC-2,CPC,Papel,ocds-5wno2w-CE-20210000000001-1001,CE-20210000000001-1001,COD-1,
+item-3,LIMPIEZA,1,s,SERVICIO,,100.5,USD,CPC-3,CPC,Servicios de limpieza,ocds-5wno2w-CE-20210000000002-1001,CE-20210000000002-1001,COD-2,
+item-4,OBRA,1,s,SERVICIO,,50.25,USD,CPC-4,CPC,Obras,ocds-5wno2w-CE-20210000000003-1001,CE-20210000000003-1001,COD-3,
+item-5,PLANIFICACION,1,u,UNIDAD,,99,USD,CPC-5,CPC,No debe aparecer,ocds-5wno2w-CE-20210000000009-1001,CE-20210000000009-1001,COD-9,

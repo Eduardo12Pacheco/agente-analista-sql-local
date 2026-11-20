@@ -113,11 +113,11 @@ def test_nan_matches_itself_but_not_a_number() -> None:
 def test_normalise_cell_canonicalises_dates_and_decimals() -> None:
     assert normalise_cell(dt.date(2021, 1, 4)) == "2021-01-04"
     assert normalise_cell(dt.datetime(2021, 1, 4, 12, 30)) == "2021-01-04T12:30:00"
-    assert normalise_cell(Decimal("2.50")) == 2.5  # noqa: PLR2004
+    assert normalise_cell(Decimal("2.50")) == 2.5
     assert normalise_cell(None) is None
     assert normalise_cell(True) is True
     assert normalise_cell("text") == "text"
-    assert normalise_cell(7) == 7  # noqa: PLR2004
+    assert normalise_cell(7) == 7
 
 
 def test_normalise_cell_leaves_unknown_objects_untouched() -> None:

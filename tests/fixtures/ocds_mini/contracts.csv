@@ -1,0 +1,7 @@
+id,dateSigned,awardID,status,value_amount,value_currency,period_endDate,period_startDate,period_durationInDays,main_ocid,main_id
+contract-1,2021-11-02,award-1,active,101.50,USD,,,30,ocds-5wno2w-CE-20210000000001-1001,CE-20210000000001-1001
+contract-2,2021-11-03,award-1,active,102.50,USD,,,,ocds-5wno2w-CE-20210000000001-1001,CE-20210000000001-1001
+contract-2,2021-11-03,award-1,active,102.50,USD,,,,ocds-5wno2w-CE-20210000000001-1001,CE-20210000000001-1001
+contract-3,,award-2,terminated,,USD,,,90,ocds-5wno2w-CE-20210000000002-1001,CE-20210000000002-1001
+contract-4,2021-11-05,award-3,active,50.25,USD,,,15,ocds-5wno2w-CE-20210000000003-1001,CE-20210000000003-1001
+contract-5,2021-11-06,award-9,active,40,USD,,,,ocds-5wno2w-CE-20210000000009-1001,CE-20210000000009-1001

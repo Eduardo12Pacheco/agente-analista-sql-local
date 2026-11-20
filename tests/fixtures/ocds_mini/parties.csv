@@ -1,0 +1,8 @@
+id,name,roles,address_region,address_locality,address_countryName,address_streetAddress,identifier_id,identifier_scheme,identifier_legalName,contactPoint_url,contactPoint_name,main_ocid,main_id,address_postalCode
+EC-RUC-0102030405001-1,MUNICIPIO DE PRUEBA,"buyer,procuringEntity",GUAYAS,GUAYAQUIL,Ecuador,,,,,,,,,
+EC-RUC-1790012345001-2,GOBIERNO DE PRUEBA,buyer,PICHINCHA,QUITO,Ecuador,,,,,,,,,
+EC-RUC-0912345670001-2001,PEREZ JUAN,supplier,MANABI,MANTA,Ecuador,,,,,,,,,
+EC-RUC-0990012345001-3001,ACME SA,supplier,PICHINCHA,QUITO,Ecuador,,,,,,,,,
+EC-RUC-0660012345001-4001,EMPRESA PUBLICA,supplier,AZUAY,CUENCA,Ecuador,,,,,,,,,
+ID-1790000000001-5001,PROVEEDOR LEGADO,supplier,EL ORO,MACHALA,Ecuador,,,,,,,,,
+EC-RUC-0812345670001-2001,GOMEZ ANA,supplier,AZUAY,LOJA,Ecuador,,,,,,,,,

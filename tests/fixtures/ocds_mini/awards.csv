@@ -1,0 +1,10 @@
+id,date,description,value_amount,value_currency,contractPeriod_endDate,contractPeriod_startDate,contractPeriod_durationInDays,main_ocid,main_id,status,enteredValue_amount,enteredValue_currency,correctedValue_amount,correctedValue_currency
+award-1,2021-11-01,Adjudicación,101.50,USD,,,,ocds-5wno2w-CE-20210000000001-1001,CE-20210000000001-1001,active,,,,
+award-2,2021-11-01,Adjudicación,102.50,USD,,,,ocds-5wno2w-CE-20210000000002-1001,CE-20210000000002-1001,,,,,
+award-3,2021-11-01,Adjudicación,103.50,USD,,,,ocds-5wno2w-CE-20210000000003-1001,CE-20210000000003-1001,active,,,,
+award-4,2021-11-01,Adjudicación,104.50,USD,,,,ocds-5wno2w-CE-20210000000004-1001,CE-20210000000004-1001,,,,,
+award-5,2021-11-01,Adjudicación,105.50,USD,,,,ocds-5wno2w-CE-20210000000005-1001,CE-20210000000005-1001,active,,,,
+award-6,2021-11-01,Adjudicación,106.50,USD,,,,ocds-5wno2w-CE-20210000000006-1001,CE-20210000000006-1001,,,,,
+award-7,2021-11-01,Adjudicación,107.50,USD,,,,ocds-5wno2w-CE-20210000000007-1001,CE-20210000000007-1001,active,,,,
+award-8,2021-11-01,Adjudicación,108.50,USD,,,,ocds-5wno2w-CE-20210000000008-1001,CE-20210000000008-1001,,,,,
+award-9,2021-11-01,Adjudicación,,USD,,,,ocds-5wno2w-CE-20210000000009-1001,CE-20210000000009-1001,active,,,,

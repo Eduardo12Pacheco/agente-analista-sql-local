@@ -7,12 +7,14 @@ domain`` (S32).
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal, Protocol, runtime_checkable
 
 from sqlagent.application.evaluation.benchmark import Benchmark
+from sqlagent.application.evaluation.metrics import ItemResult
+from sqlagent.application.evaluation.summary import EvalSummary
 from sqlagent.domain.models import ColumnInfo, QueryResult, TokenUsage
 from sqlagent.domain.semantic import SemanticLayer
 from sqlagent.domain.sql_policy import ValidatedQuery
@@ -150,3 +152,16 @@ class BenchmarkRepository(Protocol):
 
     def load(self, version: str = "v1") -> Benchmark:
         """Return the validated benchmark or raise ``ConfigError``."""
+
+
+@runtime_checkable
+class ReportWriter(Protocol):
+    """Write the four evaluation artifacts for one run (S25)."""
+
+    def write(
+        self,
+        summary: EvalSummary,
+        results: Sequence[ItemResult],
+        out_dir: Path,
+    ) -> None:
+        """Write ``summary.json``, ``results.jsonl``, ``report.md`` and ``report.html``."""

@@ -1,4 +1,4 @@
-.PHONY: install lint types test e2e eval-replay build check
+.PHONY: install lint types test e2e eval-replay smoke changelog build check
 
 install:
 	uv sync
@@ -18,6 +18,12 @@ e2e:
 
 eval-replay:
 	uv run sqlagent eval --llm replay
+
+smoke: build
+	uv run python scripts/smoke_install.py
+
+changelog:
+	uvx git-cliff --latest --strip header
 
 build:
 	uv build

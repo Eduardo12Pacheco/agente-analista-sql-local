@@ -1,16 +1,29 @@
 """``sqlagent`` command-line interface.
 
-Only ``--version`` exists in T1; the ``ask``, ``eval``, ``serve``, ``doctor``
-and ``data`` command groups are added by their respective tasks.
+T4 adds the ``data`` command group (``info``, ``verify``, ``build``); the
+``ask``, ``eval``, ``serve`` and ``doctor`` groups arrive in later tasks.
 """
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Annotated
 
 import typer
 
 from sqlagent import __version__
+from sqlagent.adapters.warehouse.etl import (
+    ATTRIBUTION,
+    BUNDLE_DIR,
+    LICENSE,
+    TABLE_ORDER,
+    build_warehouse,
+    download_and_build,
+    load_manifest,
+    verify_bundle,
+)
+from sqlagent.config import Settings
+from sqlagent.domain.errors import SqlAgentError
 
 app = typer.Typer(
     name="sqlagent",
@@ -18,6 +31,11 @@ app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
 )
+data_app = typer.Typer(
+    help="Inspect, verify and rebuild the bundled SERCOP warehouse.",
+    no_args_is_help=True,
+)
+app.add_typer(data_app, name="data")
 
 
 def _show_version(value: bool) -> None:
@@ -39,6 +57,102 @@ def main(
     ] = False,
 ) -> None:
     """Answer analytics questions locally; see README for the full workflow."""
+
+
+@data_app.command("info")
+def data_info(
+    bundle: Annotated[
+        Path,
+        typer.Option("--bundle", help="Warehouse bundle directory.", show_default=False),
+    ] = BUNDLE_DIR,
+) -> None:
+    """Show table row counts, source and licence for the bundled warehouse."""
+
+    try:
+        manifest = load_manifest(bundle)
+    except SqlAgentError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(3) from exc
+    tables = manifest.get("tables", {})
+    if not isinstance(tables, dict):
+        typer.echo("error: malformed manifest tables", err=True)
+        raise typer.Exit(3)
+    typer.echo("SERCOP Ecuador OCDS 2021 warehouse")
+    typer.echo("")
+    typer.echo(f"{'table':<16}{'rows':>10}")
+    for table in TABLE_ORDER:
+        entry = tables.get(table)
+        rows = entry.get("rows", 0) if isinstance(entry, dict) else 0
+        typer.echo(f"{table:<16}{rows:>10}")
+    source = manifest.get("source", {})
+    if not isinstance(source, dict):
+        source = {}
+    typer.echo("")
+    typer.echo(f"Source: {source.get('url', '')}")
+    typer.echo(f"Licence: {LICENSE} (https://creativecommons.org/licenses/by/3.0/ec/)")
+    typer.echo(ATTRIBUTION)
+
+
+@data_app.command("verify")
+def data_verify(
+    bundle: Annotated[
+        Path,
+        typer.Option("--bundle", help="Warehouse bundle directory.", show_default=False),
+    ] = BUNDLE_DIR,
+) -> None:
+    """Recompute Parquet hashes, row counts and fingerprints; exit 2 on failure."""
+
+    try:
+        report = verify_bundle(bundle)
+    except SqlAgentError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    if not report.ok:
+        for error in report.errors:
+            typer.echo(f"FAIL {error}", err=True)
+        raise typer.Exit(2)
+    typer.echo(f"{'table':<16}{'rows':>10}")
+    for table in TABLE_ORDER:
+        if table in report.tables:
+            typer.echo(f"{table:<16}{report.tables[table]:>10}")
+    typer.echo(f"OK: {sum(report.tables.values())} rows across {len(report.tables)} tables")
+
+
+@data_app.command("build")
+def data_build(
+    year: Annotated[int, typer.Option(help="OCDS publication year.")] = 2021,
+    source: Annotated[
+        Path | None,
+        typer.Option("--source", help="Local OCDS CSV directory (skips the download)."),
+    ] = None,
+    out: Annotated[Path, typer.Option("--out", help="Output bundle directory.")] = BUNDLE_DIR,
+    allow_checksum_drift: Annotated[
+        bool,
+        typer.Option(
+            "--allow-checksum-drift",
+            help="Accept upstream member changes after a manual review (D6).",
+        ),
+    ] = False,
+) -> None:
+    """Rebuild the Parquet bundle from pinned upstream CSVs (network only here)."""
+
+    try:
+        if source is not None:
+            report = build_warehouse(source, out, allow_drift=allow_checksum_drift)
+        else:
+            settings = Settings()
+            report = download_and_build(
+                out,
+                year=year,
+                cache_dir=settings.data_dir / "cache",
+                allow_drift=allow_checksum_drift,
+            )
+    except SqlAgentError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    for table in TABLE_ORDER:
+        typer.echo(f"{table:<16}{report.tables.get(table, 0):>10}")
+    typer.echo(f"wrote {report.manifest_path.name} ({report.total_bytes:,} parquet bytes)")
 
 
 if __name__ == "__main__":  # pragma: no cover - exercised through the console script

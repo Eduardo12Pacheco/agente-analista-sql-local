@@ -1,0 +1,34 @@
+<section class="schema" aria-labelledby="schema-title">
+  <div class="schema-head">
+    <h2 id="schema-title">{{ t("schema_title") }}</h2>
+    <p class="muted">{{ t("schema_tables") }}</p>
+  </div>
+  <div class="schema-tables">
+    {% for table in tables %}
+    <details class="schema-table">
+      <summary>
+        <code>{{ table.name }}</code>
+        <span class="muted">{{ table.columns | length }} columns</span>
+      </summary>
+      <p>{{ table.description }}</p>
+      <table class="schema-columns">
+        <thead><tr><th scope="col">column</th><th scope="col">type</th><th scope="col">description</th></tr></thead>
+        <tbody>
+          {% for column in table.columns %}
+          <tr>
+            <td><code>{{ column.name }}</code></td>
+            <td><code>{{ column.type }}</code></td>
+            <td>{{ column.description }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </details>
+    {% endfor %}
+  </div>
+  <div class="attribution">
+    <h3>{{ t("schema_attribution") }}</h3>
+    <p>{{ attribution }}</p>
+    <p class="muted">{{ license }} · <a href="{{ source_url }}">SERCOP</a></p>
+  </div>
+</section>

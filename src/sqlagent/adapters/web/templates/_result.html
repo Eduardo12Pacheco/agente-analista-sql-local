@@ -1,0 +1,33 @@
+<div class="result-block">
+  <div class="block-head">
+    <h3>{{ t("result_title") }}</h3>
+    <span class="muted">{{ t("rows_count", count=row_count) }}</span>
+  </div>
+  {% if truncated or row_count > rows | length %}
+  <p class="notice notice--info">
+    {{ t("truncated_notice", count=rows | length) }}
+  </p>
+  {% endif %}
+  <div class="table-scroll" tabindex="0" role="region" aria-label="{{ t('result_title') }}">
+    <table class="result-table">
+      <thead>
+        <tr>
+          {% for column in columns %}
+          <th scope="col">{{ column.name }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          {% for value in row %}
+          <td>
+            {% if value is none %}<span class="null">NULL</span>{% else %}{{ value }}{% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

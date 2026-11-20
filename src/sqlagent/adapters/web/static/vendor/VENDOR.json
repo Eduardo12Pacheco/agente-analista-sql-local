@@ -1,0 +1,47 @@
+{
+  "schema": "sqlagent.vendor/v1",
+  "packages": [
+    {
+      "name": "htmx.org",
+      "version": "2.0.11",
+      "integrity": "sha512-Thx/WtpeOQqSrqBCw/A1cwGJGg4UrVa3+sW0GmrM3p4gJgO89ecH4qtbnyzDDWFvBTqjnIMCgELTNt636dtamA==",
+      "tarball": "https://registry.npmjs.org/htmx.org/-/htmx.org-2.0.11.tgz",
+      "files": [
+        {
+          "path": "htmx.min.js",
+          "sha256": "d6fdc75f204e6bdefa99b69bf1e6d4ac69b8a364f77929f45c13476b4000f717",
+          "bytes": 52182
+        }
+      ],
+      "license_file": "licenses/htmx-org.txt"
+    },
+    {
+      "name": "htmx-ext-sse",
+      "version": "2.2.4",
+      "integrity": "sha512-LJmxVhykyflBWgh5PvbRidcyuqMHlgfajmmzumvKctv9puvsufeH6OaejSMZTNTnEI8O2wXXn4ZZtBdpEMqmEQ==",
+      "tarball": "https://registry.npmjs.org/htmx-ext-sse/-/htmx-ext-sse-2.2.4.tgz",
+      "files": [
+        {
+          "path": "sse.min.js",
+          "sha256": "98a46496de0c3605fbffdce9167ba427bdd9553184f83f149c261891a92c0136",
+          "bytes": 2853
+        }
+      ],
+      "license_file": "licenses/htmx-ext-sse.txt"
+    },
+    {
+      "name": "chart.js",
+      "version": "4.6.1",
+      "integrity": "sha512-hJyniucsFmq//EvXYvJ6c6mahPoI3kaxdjVH8awTaJ/fDNWeSqqqArixMJWkWNN6fcYvPU3HneSANFNYtRi61g==",
+      "tarball": "https://registry.npmjs.org/chart.js/-/chart.js-4.6.1.tgz",
+      "files": [
+        {
+          "path": "chart.umd.min.js",
+          "sha256": "87364cc2b2a76a6684929e7d6b80b18a897794db38400caff1fcf1791c6925d2",
+          "bytes": 210082
+        }
+      ],
+      "license_file": "licenses/chart-js.txt"
+    }
+  ]
+}

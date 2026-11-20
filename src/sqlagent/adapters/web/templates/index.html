@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <h1>{{ t("empty_title") }}</h1>
+  <p>{{ t("empty_body") }}</p>
+</section>
+
+<form
+  id="composer"
+  class="composer"
+  hx-post="/ask"
+  hx-target="#conversation"
+  hx-swap="afterbegin"
+  hx-disabled-elt="find button[type='submit']"
+  action="/api/ask"
+  method="post"
+  accept-charset="utf-8"
+>
+  <input type="hidden" name="lang" value="{{ language }}" />
+  <label for="question">{{ t("question_label") }}</label>
+  <textarea
+    id="question"
+    name="question"
+    rows="3"
+    maxlength="600"
+    required
+    placeholder="{{ t('question_placeholder') }}"
+  >{{ initial_question if initial_question is defined else "" }}</textarea>
+  <div class="composer__actions">
+    <p class="hint">{{ t("composer_hint") }}</p>
+    <button type="submit" class="primary-button">{{ t("send") }}</button>
+  </div>
+  <noscript><p class="hint">{{ t("no_js_hint") }}</p></noscript>
+</form>
+
+<details
+  class="data-drawer"
+  hx-get="/schema"
+  hx-trigger="click once"
+  hx-target="this"
+  hx-swap="innerHTML"
+>
+  <summary>{{ t("schema_title") }}</summary>
+  <p class="muted">{{ t("schema_tables") }}…</p>
+</details>
+
+<section id="empty-state" class="empty-state" aria-labelledby="examples-title">
+  <h2 id="examples-title">{{ t("examples_title") }}</h2>
+  <div class="examples">
+    {% for example in examples %}
+    <button class="example" type="button" data-question="{{ example }}">{{ example }}</button>
+    {% endfor %}
+  </div>
+</section>
+
+<section id="conversation" class="conversation" aria-live="polite" aria-relevant="additions">
+  {% if initial_answer is defined and initial_answer %}
+    {% include "_answer.html" %}
+  {% endif %}
+</section>
+{% endblock %}

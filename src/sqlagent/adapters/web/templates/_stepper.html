@@ -1,0 +1,12 @@
+<ol class="stepper-list" role="status" aria-live="polite">
+  {% for step in steps %}
+  <li
+    class="step is-{{ step.state }}"
+    data-phase="{{ step.phase }}"
+    {% if step.state == "active" %}aria-current="step"{% endif %}
+  >
+    <span class="step-dot" aria-hidden="true"></span>
+    <span class="step-label">{{ step.label }}</span>
+  </li>
+  {% endfor %}
+</ol>

@@ -1,0 +1,57 @@
+<details class="trace">
+  <summary>{{ t("trace_title") }}</summary>
+  <dl class="trace-grid">
+    <div>
+      <dt>{{ t("trace_llm_calls") }}</dt>
+      <dd data-field="llm_calls">{{ answer.trace.llm_calls }}</dd>
+    </div>
+    <div>
+      <dt>{{ t("trace_tokens") }}</dt>
+      <dd data-field="tokens">{{ answer.trace.usage.total }}</dd>
+    </div>
+    <div>
+      <dt>{{ t("trace_tables") }}</dt>
+      <dd data-field="retrieved_tables">
+        {% if answer.trace.retrieved_tables %}
+          {{ answer.trace.retrieved_tables | join(", ") }}
+        {% else %}
+          {{ t("none") }}
+        {% endif %}
+      </dd>
+    </div>
+    <div>
+      <dt>{{ t("trace_guardrails") }}</dt>
+      <dd data-field="guardrail_events">
+        {% if answer.trace.guardrail_events %}
+          {% for event in answer.trace.guardrail_events %}
+          <span class="badge badge--danger">{{ event }}</span>
+          {% endfor %}
+        {% else %}
+          {{ t("none") }}
+        {% endif %}
+      </dd>
+    </div>
+    <div>
+      <dt>{{ t("trace_injections") }}</dt>
+      <dd data-field="injection_flags">
+        {% if answer.trace.injection_flags %}
+        <span class="badge badge--danger">{{ answer.trace.injection_flags }}</span>
+        {% else %}
+        {{ t("none") }}
+        {% endif %}
+      </dd>
+    </div>
+  </dl>
+  {% if answer.trace.attempts %}
+  <h4>{{ t("trace_attempts") }}</h4>
+  <ol class="attempt-list">
+    {% for attempt in answer.trace.attempts %}
+    <li>
+      <span class="badge">{{ attempt.kind }}</span>
+      {% if attempt.error_code %}<code class="guardrail-code">{{ attempt.error_code }}</code>{% endif %}
+      <code class="attempt-sql">{{ attempt.sql }}</code>
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+</details>

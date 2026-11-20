@@ -1,0 +1,33 @@
+{% if answer.status.value == "ok" %}
+<div class="answer-status">
+  <span class="badge badge--ok">{{ t("status_ok") }}</span>
+  <span class="muted">{{ answer.language.value }}</span>
+</div>
+<p class="narrative">{{ answer.text }}</p>
+{% if exported %}
+<p class="answer-actions">
+  <a class="secondary-button" href="/export/{{ answer_id }}.csv" download>
+    {{ t("export_csv") }}
+  </a>
+</p>
+{% endif %}
+{% elif answer.status.value == "clarification" %}
+<div class="notice notice--clarification" role="status">
+  <h3>{{ t("clarification_title") }}</h3>
+  <p>{{ answer.text }}</p>
+</div>
+{% elif answer.status.value == "refused" %}
+<div class="notice notice--refused" role="status">
+  <h3>{{ t("refusal_title") }}</h3>
+  <p>{{ answer.text }}</p>
+</div>
+{% else %}
+<div class="notice notice--error" role="alert">
+  <h3>{{ t("failed_title") }}</h3>
+  <p>{{ answer.text }}</p>
+  <p class="hint">{{ t("error_hint") }}</p>
+</div>
+{% endif %}
+{% if answer.trace %}
+  {% include "_trace.html" %}
+{% endif %}

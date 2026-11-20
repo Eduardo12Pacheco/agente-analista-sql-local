@@ -1,0 +1,41 @@
+<section
+  id="run-{{ run_id }}"
+  class="run"
+  hx-ext="sse"
+  sse-connect="/ask/stream/{{ run_id }}"
+  sse-close="done"
+  aria-busy="true"
+  data-run-id="{{ run_id }}"
+>
+  <p class="run-question">{{ question }}</p>
+  <div
+    id="stepper-{{ run_id }}"
+    class="stepper"
+    sse-swap="phase"
+    hx-swap="innerHTML"
+  >{% include "_stepper.html" %}</div>
+  <div
+    id="retrieval-{{ run_id }}"
+    class="retrieval"
+    sse-swap="retrieval"
+    hx-swap="innerHTML"
+  ></div>
+  <article class="answer-card" tabindex="-1">
+    <div
+      id="narrative-{{ run_id }}"
+      class="narrative-slot"
+      sse-swap="answer,error"
+      hx-swap="innerHTML"
+    >
+      <p class="running">{{ t("running") }}</p>
+    </div>
+    <div id="sql-{{ run_id }}" class="sql-slot" sse-swap="sql" hx-swap="innerHTML"></div>
+    <div
+      id="result-{{ run_id }}"
+      class="result-slot"
+      sse-swap="result"
+      hx-swap="innerHTML"
+    ></div>
+    <div id="chart-{{ run_id }}" class="chart-slot" sse-swap="chart" hx-swap="innerHTML"></div>
+  </article>
+</section>

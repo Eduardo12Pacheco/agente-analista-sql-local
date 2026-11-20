@@ -1,0 +1,41 @@
+{% set answer = initial_answer %}
+<section class="run run--full" aria-label="{{ t('status_ok') if answer.status.value == 'ok' else t('status_' ~ answer.status.value) }}">
+  {% if initial_question is defined and initial_question %}
+  <p class="run-question">{{ initial_question }}</p>
+  {% endif %}
+  {% if answer.sql %}
+    {% set sql = answer.sql %}
+    {% include "_sql.html" %}
+  {% endif %}
+  {% if answer.result %}
+    {% set columns = answer.result.columns %}
+    {% set rows = answer.result.rows %}
+    {% set row_count = answer.result.row_count %}
+    {% set truncated = answer.result.truncated %}
+    {% include "_result.html" %}
+  {% endif %}
+  {% if answer.chart and answer.result %}
+    {% set spec = {
+      "kind": answer.chart.kind,
+      "x": answer.chart.x,
+      "y": answer.chart.y | list,
+      "series": answer.chart.series,
+      "title": answer.chart.title,
+      "reason": answer.chart.reason,
+      "truncated_categories": answer.chart.truncated_categories
+    } %}
+    {% set chart_data = {
+      "spec": spec,
+      "columns": answer.result.columns | map(attribute="name") | list,
+      "rows": answer.result.rows | list
+    } %}
+    {% set ns = namespace(index=0) %}
+    {% for column in answer.result.columns %}
+      {% if column.name == answer.chart.y[0] %}{% set ns.index = loop.index0 %}{% endif %}
+    {% endfor %}
+    {% set kpi_value = answer.result.rows[0][ns.index] if answer.result.rows else "" %}
+    {% include "_chart.html" %}
+  {% endif %}
+  {% set exported = answer.result is not none %}
+  {% include "_answer_body.html" %}
+</section>

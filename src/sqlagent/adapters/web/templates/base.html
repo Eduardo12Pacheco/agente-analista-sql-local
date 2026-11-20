@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="{{ language }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}{{ t("app_title") }}{% endblock %}</title>
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/static/app.css" />
+    <script src="/static/vendor/htmx.min.js" defer></script>
+    <script src="/static/vendor/sse.min.js" defer></script>
+    <script src="/static/vendor/chart.umd.min.js" defer></script>
+    <script src="/static/chat.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{{ t("skip_to_content") }}</a>
+    <header class="site-header">
+      <div class="site-header__identity">
+        <a class="brand" href="/">{{ t("app_title") }}</a>
+        <span class="model-pill" title="{{ t('model_label') }}">
+          {{ t("model_label") }}: <strong>{{ model }}</strong>
+        </span>
+      </div>
+      <div class="site-header__controls">
+        <span
+          id="health-pill"
+          class="pill pill--muted"
+          role="status"
+          data-health-url="/health"
+          data-ok-label="{{ t('ollama_ok') }}"
+          data-down-label="{{ t('ollama_down') }}"
+          data-demo="{{ 'true' if demo else 'false' }}"
+        >
+          {{ t("ollama_down") }}
+        </span>
+        <a
+          id="lang-toggle"
+          class="control-link"
+          href="?lang={{ 'en' if language == 'es' else 'es' }}"
+          aria-label="{{ t('lang_toggle_label') }}"
+        >
+          {{ t("lang_toggle_text") }}
+        </a>
+        <button
+          id="theme-toggle"
+          class="icon-button"
+          type="button"
+          aria-label="{{ t('theme_toggle') }}"
+          aria-pressed="false"
+          title="{{ t('theme_toggle') }}"
+        >
+          <span aria-hidden="true">◐</span>
+        </button>
+      </div>
+    </header>
+    {% if demo %}
+    <p class="demo-banner" role="status">{{ t("demo_banner") }}</p>
+    {% endif %}
+    <main id="main">{% block content %}{% endblock %}</main>
+    <footer class="site-footer">
+      <p>{{ t("footer_attribution") }}</p>
+      <p class="muted">
+        <a href="https://datosabiertos.compraspublicas.gob.ec/PLATAFORMA/datos-abiertos">
+          SERCOP
+        </a>
+        ·
+        <a href="https://creativecommons.org/licenses/by/3.0/ec/">CC BY 3.0 EC</a>
+        · sqlagent {{ version }}
+      </p>
+    </footer>
+  </body>
+</html>

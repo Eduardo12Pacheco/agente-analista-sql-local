@@ -1,0 +1,8 @@
+{% if tables %}
+<p class="retrieval-line">
+  <span class="retrieval-label">{{ t("retrieval_tables") }}:</span>
+  {% for table in tables %}
+  <span class="table-badge">{{ table }}</span>
+  {% endfor %}
+</p>
+{% endif %}

@@ -1,0 +1,34 @@
+{% set spec = chart_data.spec %}
+{% if spec.kind and spec.kind != "none" %}
+<figure class="chart-block">
+  <div class="block-head">
+    <h3>{{ t("chart_title") }}</h3>
+    <span class="muted">{{ t("chart_why") }}: {{ spec.reason }}</span>
+  </div>
+  {% if spec.kind == "kpi" %}
+  <p class="kpi-value">{{ kpi_value if kpi_value is defined else "—" }}</p>
+  {% else %}
+  <div class="chart-canvas" data-chart="{{ chart_data | json_attr }}">
+    <canvas role="img" aria-label="{{ t('chart_aria') }}"></canvas>
+  </div>
+  {% endif %}
+  <figcaption class="sr-only">{{ spec.title }} · {{ spec.reason }}</figcaption>
+  {% if spec.kind != "kpi" %}
+  <details class="chart-fallback">
+    <summary>{{ t("chart_fallback") }}</summary>
+    <div class="table-scroll">
+      <table class="result-table">
+        <thead>
+          <tr>{% for column in chart_data.columns %}<th scope="col">{{ column if column is string else column.name }}</th>{% endfor %}</tr>
+        </thead>
+        <tbody>
+          {% for row in chart_data.rows %}
+          <tr>{% for value in row %}<td>{% if value is none %}<span class="null">NULL</span>{% else %}{{ value }}{% endif %}</td>{% endfor %}</tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </details>
+  {% endif %}
+</figure>
+{% endif %}

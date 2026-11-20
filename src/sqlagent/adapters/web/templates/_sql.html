@@ -1,0 +1,19 @@
+<div class="sql-block">
+  <div class="block-head">
+    <h3>{{ t("sql_title") }}</h3>
+    <div class="badges">
+      <span class="badge badge--safe">{{ t("readonly_badge") }}</span>
+      <span class="badge badge--safe">{{ t("validated_badge") }}</span>
+      <span class="badge">{{ t("limit_badge", limit=limit) }}</span>
+    </div>
+    <button
+      class="copy-button"
+      type="button"
+      data-copy-sql
+      data-copied="{{ t('copied') }}"
+    >
+      {{ t("copy_sql") }}
+    </button>
+  </div>
+  <pre class="sql-code"><code>{{ sql | highlight_sql }}</code></pre>
+</div>

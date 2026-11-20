@@ -205,22 +205,23 @@ class DuckDbWarehouse:
             "array_to_string(list_transform(list_filter("
             f"{words}, lambda word: LENGTH(word) > 2), lambda word: LEFT(word, 1)), '')"
         )
-        contains_clause = " OR ".join(
-            f"contains({folded}, LOWER(strip_accents(?)))" for _ in tokens
-        )
-        acronym_clause = " OR ".join(f"{acronym} = LOWER(strip_accents(?))" for _ in tokens)
-        score_clause = ", ".join(
-            f"jaro_winkler_similarity({folded}, LOWER(strip_accents(?)))" for _ in tokens
-        )
+        # The token list is bound once through a VALUES relation; scoring counts
+        # matched tokens ("IESS seguridad social" ranks the institution above
+        # IESS hospitals) with Jaro-Winkler as a small tie-breaker.
+        values = ", ".join(["(?)"] * len(tokens))
+        matches = f"contains({folded}, token) OR {acronym} = token"
         sql = (
-            "SELECT DISTINCT value, score FROM ("
+            "SELECT value FROM ("
             f'SELECT CAST("{column}" AS VARCHAR) AS value, '
-            f"GREATEST({score_clause}) AS score "
-            f'FROM "{table}" '
-            f'WHERE "{column}" IS NOT NULL AND ({contains_clause} OR {acronym_clause})'
-            ") WHERE value <> '' ORDER BY score DESC, value LIMIT ?"
+            f"SUM(CASE WHEN {matches} THEN 1 ELSE 0 END) "
+            f"+ 0.01 * MAX(jaro_winkler_similarity({folded}, token)) AS score "
+            f'FROM "{table}" CROSS JOIN (VALUES {values}) AS tokens(token) '
+            f'WHERE "{column}" IS NOT NULL '
+            "GROUP BY value HAVING SUM(CASE WHEN "
+            f"{matches} THEN 1 ELSE 0 END) > 0"
+            ") ORDER BY score DESC, value LIMIT ?"
         )
-        parameters = [*tokens, *tokens, *tokens, limit]
+        parameters = [*tokens, limit]
         with self._lock:
             try:
                 rows = self._connection.execute(sql, parameters).fetchall()

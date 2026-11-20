@@ -111,5 +111,9 @@ def test_adapter_executes_against_the_real_bundle(tmp_path: Path) -> None:
         assert result.rows == ((121_072,),)
         info = wh.info()
         assert info.tables["suppliers"] == 10_217
+        assert wh.lookup_values("buyers.buyer_name", "iess seguridad social")[0] == (
+            "INSTITUTO ECUATORIANO DE SEGURIDAD SOCIAL"
+        )
+        assert wh.lookup_values("buyers.province", "guayas") == ["GUAYAS"]
     finally:
         wh.close()

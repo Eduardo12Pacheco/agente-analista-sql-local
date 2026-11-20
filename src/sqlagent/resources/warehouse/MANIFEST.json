@@ -1,0 +1,102 @@
+{
+  "schema": "sqlagent.warehouse-manifest/v1",
+  "source": {
+    "url": "https://data.open-contracting.org/en/publication/110/download?name=2021.csv.tar.gz",
+    "year": 2021,
+    "tarball_sha256": "e1fbc3c855a4c85f2077542cbce977ab5ac882fc11744f7042bc81d5a8f426fe",
+    "members": {
+      "main.csv": {
+        "name": "main.csv",
+        "sha256": "eb3c05fdf955dbd3879e372f3e6ce54f7f8b199efd45bb355d754aeba3e53f00",
+        "rows": 122277
+      },
+      "awards.csv": {
+        "name": "awards.csv",
+        "sha256": "2622dbe34c5ab30a6b93de76b817884ad19484ee6557957faf8e73897beefe4d",
+        "rows": 121736
+      },
+      "awards_suppliers.csv": {
+        "name": "awards_suppliers.csv",
+        "sha256": "cbfaae3cf405fccf72d4de9e31003b96ee19323eb5f7bd0e31965d194fe0d4ab",
+        "rows": 121736
+      },
+      "contracts.csv": {
+        "name": "contracts.csv",
+        "sha256": "6d944118c5d0876279033dd39e9c842df20be759cb5ef4faedc7b720e12b71ee",
+        "rows": 117492
+      },
+      "parties.csv": {
+        "name": "parties.csv",
+        "sha256": "5da114e85818189bc63b623b6fd2863443247f6097726e72d065054db0cc0da8",
+        "rows": 293287
+      },
+      "tender_items.csv": {
+        "name": "tender_items.csv",
+        "sha256": "0844e18c3d1e7b15bbfb63609d1ba83d059c6eab44d83546802803c7a5ae0fe8",
+        "rows": 49628
+      }
+    }
+  },
+  "tables": {
+    "buyers": {
+      "file": "buyers.parquet",
+      "sha256": "66f7e1f6cde4f95ee205fd91936fa8c367bf8f7c2d4557c2ef1894234f8f49d0",
+      "rows": 2641,
+      "fingerprint": {
+        "sum_amount_cents": null,
+        "distinct_keys": 2641
+      }
+    },
+    "suppliers": {
+      "file": "suppliers.parquet",
+      "sha256": "e054a56a78f9a0cbe84f6e069b7b37d6e0b89d8797ad5689111dce9e4d64e95a",
+      "rows": 10217,
+      "fingerprint": {
+        "sum_amount_cents": null,
+        "distinct_keys": 10217
+      }
+    },
+    "tenders": {
+      "file": "tenders.parquet",
+      "sha256": "f3abd034f4ce111da656a655beace09e7af1130db33eab7fe155c28db06684e6",
+      "rows": 121072,
+      "fingerprint": {
+        "sum_amount_cents": 168313307272,
+        "distinct_keys": 121072
+      }
+    },
+    "awards": {
+      "file": "awards.parquet",
+      "sha256": "1102c411fd998c9612915ad87dafb263b3998593d8268cd64b4788ba421846bf",
+      "rows": 121736,
+      "fingerprint": {
+        "sum_amount_cents": 208067609076,
+        "distinct_keys": 121736
+      }
+    },
+    "contracts": {
+      "file": "contracts.parquet",
+      "sha256": "f64cb7185bd8845fa0ab4e9e79055cd0a6b3f1c4dd30449287190044a5a29936",
+      "rows": 117492,
+      "fingerprint": {
+        "sum_amount_cents": 122637309774,
+        "distinct_keys": 117397
+      }
+    },
+    "tender_items": {
+      "file": "tender_items.parquet",
+      "sha256": "d4317aac062ab31d1258a57529ca602c5e7a3d771594a510f509ad30bb40460a",
+      "rows": 49628,
+      "fingerprint": {
+        "sum_amount_cents": 164358167000,
+        "distinct_keys": 49628
+      }
+    }
+  },
+  "tools": {
+    "duckdb": "2.0.0",
+    "sqlagent": "0.1.0.dev0",
+    "sqlglot": "30.33.0"
+  },
+  "built_at": "2026-11-20T06:46:57Z"
+}

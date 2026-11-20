@@ -181,7 +181,10 @@ def main(argv: list[str] | None = None) -> int:
             except OSError as exc:
                 print(f"error: cannot read {path}: {exc}", file=sys.stderr)
                 return 2
-            path.write_text(_replace_block(text, block) + "\n", encoding="utf-8")
+            updated = _replace_block(text, block)
+            if not updated.endswith("\n"):
+                updated += "\n"
+            path.write_text(updated, encoding="utf-8")
             print(f"updated {path}")
 
     if args.check:

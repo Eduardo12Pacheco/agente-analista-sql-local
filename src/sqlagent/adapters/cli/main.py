@@ -12,6 +12,7 @@ from typing import Annotated
 import typer
 
 from sqlagent import __version__
+from sqlagent.adapters.cli.doctor import run_doctor
 from sqlagent.adapters.warehouse.etl import (
     ATTRIBUTION,
     BUNDLE_DIR,
@@ -24,6 +25,7 @@ from sqlagent.adapters.warehouse.etl import (
 )
 from sqlagent.config import Settings
 from sqlagent.domain.errors import SqlAgentError
+from sqlagent.logging import configure_logging
 
 app = typer.Typer(
     name="sqlagent",
@@ -57,6 +59,37 @@ def main(
     ] = False,
 ) -> None:
     """Answer analytics questions locally; see README for the full workflow."""
+
+
+@app.command("doctor")
+def doctor(
+    offline: Annotated[
+        bool,
+        typer.Option(
+            "--offline",
+            help="Skip all network probes; report warehouse and demo availability only.",
+        ),
+    ] = False,
+) -> None:
+    """Check Python, warehouse, Ollama, model presence and GPU; suggest next steps."""
+
+    settings = Settings()
+    configure_logging(settings)
+    report = run_doctor(settings, offline=offline)
+    typer.echo("sqlagent doctor")
+    for check in report.checks:
+        status = "OK" if check.ok else "--"
+        typer.echo(f"[{status}] {check.name}: {check.detail}")
+    if report.warehouse_ok:
+        typer.echo("warehouse OK")
+    else:
+        typer.echo("warehouse broken", err=True)
+    if report.actions:
+        typer.echo("")
+        typer.echo("Next steps:")
+        for action in report.actions:
+            typer.echo(f"  {action}")
+    raise typer.Exit(report.exit_code)
 
 
 @data_app.command("info")

@@ -154,3 +154,15 @@ def test_repository_rejects_non_list_document(tmp_path: Path) -> None:
 
     with pytest.raises(ConfigError, match="list"):
         YamlBenchmarkRepository(tmp_path).load("v1")
+
+
+def test_build_lock_hashes_questions_and_manifest() -> None:
+    benchmark = YamlBenchmarkRepository().load("v1")
+    lock_path = DEFAULT_BENCHMARK_DIR / "v1" / "benchmark.lock.json"
+    committed = json.loads(lock_path.read_text(encoding="utf-8"))
+    computed = build_lock(benchmark, QUESTIONS_PATH, MANIFEST_PATH)
+
+    assert computed.model_dump() == committed
+    assert len(computed.questions_sha256) == 64
+    assert len(computed.warehouse_manifest_sha256) == 64
+    assert computed.n == 72

@@ -7,6 +7,7 @@
 | [0003](0003-layered-sql-guardrails.md) | Layered SQL guardrails |
 | [0004](0004-dataset-choice-and-pseudonymisation.md) | SERCOP dataset and pseudonymisation |
 | [0006](0006-evaluation-methodology-cassettes-and-gate.md) | Evaluation methodology, cassettes and CI gate |
+| [0007](0007-web-stack-and-vendored-assets.md) | Web stack and vendored browser assets |
 | [0008](0008-parquet-bundle-and-materialised-duckdb.md) | Parquet bundle and materialised DuckDB |
 
-ADRs 0005 and 0007 are added by their respective tasks; 0009 is in place.
+ADR 0005 is added by T12; 0009 is in place.

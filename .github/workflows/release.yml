@@ -1,0 +1,129 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync --frozen
+
+      - name: Verify tag matches package version
+        run: |
+          uv run python - <<'PY'
+          import os
+          import tomllib
+          from pathlib import Path
+
+          from sqlagent import __version__ as package_version
+
+          project = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+          project_version = project["project"]["version"]
+          tag = os.environ["GITHUB_REF_NAME"]
+          assert project_version == package_version, (project_version, package_version)
+          assert tag == f"v{project_version}", (tag, project_version)
+          print(f"version OK: {project_version} ({tag})")
+          PY
+
+      - name: Build wheel and sdist
+        run: uv build
+
+      - name: Write checksums
+        run: |
+          cd dist
+          sha256sum * > ../SHA256SUMS
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: |
+            dist/*
+            SHA256SUMS
+          if-no-files-found: error
+
+  smoke:
+    name: Release smoke (${{ matrix.os }})
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+
+      - name: Download distributions
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+
+      - name: Install from wheel and run offline smoke
+        env:
+          PYTHONUTF8: "1"
+        run: python scripts/smoke_install.py --dist dist
+
+  release:
+    name: Publish GitHub Release
+    needs: [build, smoke]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Download distributions
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+
+      - name: Generate release notes
+        uses: orhun/git-cliff-action@v4
+        with:
+          args: --latest --strip header
+          output: RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          body_path: RELEASE_NOTES.md
+          files: |
+            dist/*
+            eval/reports/latest/report.md
+            eval/reports/latest/summary.json
+          fail_on_unmatched_files: true

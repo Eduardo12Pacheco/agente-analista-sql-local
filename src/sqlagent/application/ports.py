@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 from sqlagent.domain.models import ColumnInfo, QueryResult
+from sqlagent.domain.semantic import SemanticLayer
 from sqlagent.domain.sql_policy import ValidatedQuery
 
 
@@ -68,3 +69,11 @@ class WarehousePort(Protocol):
 
     def info(self) -> WarehouseInfo:
         """Return manifest metadata and row counts."""
+
+
+@runtime_checkable
+class SemanticLayerRepository(Protocol):
+    """Load the documented tables, metrics and glossary (S6)."""
+
+    def load(self) -> SemanticLayer:
+        """Return the validated semantic layer."""

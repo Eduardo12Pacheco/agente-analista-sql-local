@@ -14,7 +14,7 @@ import hashlib
 import json
 import re
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Literal
 
 import duckdb
@@ -166,9 +166,13 @@ class LakehouseManifest(BaseModel):
     @field_validator("duckdb_file")
     @classmethod
     def _relative_file(cls, value: Path) -> Path:
-        if value.is_absolute():
+        raw = str(value)
+        windows = PureWindowsPath(raw)
+        posix = PurePosixPath(raw)
+        if value.is_absolute() or windows.is_absolute() or posix.is_absolute():
             raise ValueError("duckdb_file must be relative to the manifest directory")
-        if any(part == ".." for part in value.parts):
+        parts = {*windows.parts, *posix.parts, *value.parts}
+        if ".." in parts:
             raise ValueError("duckdb_file must not escape the manifest directory")
         return value
 

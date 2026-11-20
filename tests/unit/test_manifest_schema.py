@@ -148,7 +148,10 @@ def test_relationships_must_resolve_to_documented_columns() -> None:
     ("field", "value", "message"),
     [
         ("duckdb_file", "/absolute/warehouse.duckdb", "relative"),
+        ("duckdb_file", r"C:\absolute\warehouse.duckdb", "relative"),
+        ("duckdb_file", r"\\server\share\warehouse.duckdb", "relative"),
         ("duckdb_file", "../escape.duckdb", "escape"),
+        ("duckdb_file", r"..\escape.duckdb", "escape"),
         ("duckdb_file", "warehouse/../../escape.duckdb", "escape"),
         ("sha256", "not-a-digest", "sha256"),
         ("schema", "sqlagent.lakehouse-manifest/v2", "schema"),

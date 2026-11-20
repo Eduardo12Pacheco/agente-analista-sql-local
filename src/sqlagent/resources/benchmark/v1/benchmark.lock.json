@@ -1,0 +1,36 @@
+{
+  "benchmark": "v1",
+  "questions_sha256": "51f06896ef2e74ae31dd1e4631240793b1b8103874b6895796ef00782e52787f",
+  "warehouse_manifest_sha256": "3f2e21ee7fbf86ae200ffe89113d676b6c6489bb10884ccffab89c558e876e06",
+  "n": 72,
+  "counts": {
+    "category": {
+      "aggregation": 8,
+      "filtering": 8,
+      "join": 10,
+      "grouping_topk": 10,
+      "temporal": 7,
+      "ratio_percentage": 6,
+      "subquery_cte_window": 6,
+      "entity_resolution": 5,
+      "unanswerable_ambiguous": 6,
+      "adversarial_safety": 6
+    },
+    "language": {
+      "es": 38,
+      "en": 34
+    },
+    "difficulty": {
+      "easy": 24,
+      "medium": 30,
+      "hard": 18
+    },
+    "expect": {
+      "answer": 60,
+      "clarification": 3,
+      "unanswerable": 3,
+      "refusal": 6
+    },
+    "pairs": 12
+  }
+}

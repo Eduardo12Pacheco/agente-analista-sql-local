@@ -7,6 +7,7 @@ import pytest
 from sqlagent.adapters.semantic.yaml_repository import YamlSemanticLayerRepository
 from sqlagent.adapters.warehouse.duckdb_warehouse import DuckDbWarehouse
 from sqlagent.adapters.warehouse.materialize import ensure_warehouse
+from sqlagent.application.agent.tools import LookupValuesTool
 from sqlagent.application.ports import Catalog
 from sqlagent.config import Settings
 from sqlagent.domain.semantic import SemanticLayer
@@ -54,14 +55,19 @@ def layer() -> SemanticLayer:
 
 
 @pytest.fixture(scope="module")
-def catalog(tmp_path_factory: pytest.TempPathFactory) -> Catalog:
+def warehouse(tmp_path_factory: pytest.TempPathFactory) -> DuckDbWarehouse:
     data_dir = tmp_path_factory.mktemp("semantic-sync")
     path = ensure_warehouse(Settings(data_dir=data_dir))
-    warehouse = DuckDbWarehouse(path)
+    adapter = DuckDbWarehouse(path)
     try:
-        return warehouse.catalog()
+        yield adapter
     finally:
-        warehouse.close()
+        adapter.close()
+
+
+@pytest.fixture(scope="module")
+def catalog(warehouse: DuckDbWarehouse) -> Catalog:
+    return warehouse.catalog()
 
 
 def test_tables_and_columns_match_the_live_schema(layer: SemanticLayer, catalog: Catalog) -> None:
@@ -127,3 +133,22 @@ def test_glossary_and_quirks_meet_the_bilingual_contract(layer: SemanticLayer) -
         assert entry.meaning.strip()
     assert len(layer.data_quirks) >= 5
     assert all(quirk.strip() for quirk in layer.data_quirks)
+
+
+def test_lookup_values_resolves_known_entities_against_real_data(
+    warehouse: DuckDbWarehouse, layer: SemanticLayer
+) -> None:
+    tool = LookupValuesTool(warehouse, layer)
+
+    iess = tool.run("buyers.buyer_name", "iess seguridad social")
+    assert iess.ok is True
+    assert iess.values[0] == "INSTITUTO ECUATORIANO DE SEGURIDAD SOCIAL"
+    assert iess.block.startswith("<<DATA nonce=")
+
+    guayas = tool.run("buyers.province", "guayas")
+    assert guayas.ok is True
+    assert guayas.values[0] == "GUAYAS"
+
+    rejected = tool.run("awards.amount_usd", "1000")
+    assert rejected.ok is False
+    assert rejected.error is not None

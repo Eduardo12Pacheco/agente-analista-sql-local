@@ -13,6 +13,7 @@ import typer
 
 from sqlagent import __version__
 from sqlagent.adapters.cli.doctor import run_doctor
+from sqlagent.adapters.cli.render import answer_to_json, render_answer
 from sqlagent.adapters.warehouse.etl import (
     ATTRIBUTION,
     BUNDLE_DIR,
@@ -23,9 +24,15 @@ from sqlagent.adapters.warehouse.etl import (
     load_manifest,
     verify_bundle,
 )
+from sqlagent.application.use_cases.ask import AskQuestion
+from sqlagent.bootstrap import build_agent
 from sqlagent.config import Settings
-from sqlagent.domain.errors import SqlAgentError
+from sqlagent.domain.errors import ConfigError, SqlAgentError, WarehouseUnavailable
+from sqlagent.domain.models import Language, Status
 from sqlagent.logging import configure_logging
+
+_LLM_BACKENDS = {"ollama", "replay"}
+_LANGUAGES = {"auto", "es", "en"}
 
 app = typer.Typer(
     name="sqlagent",
@@ -59,6 +66,74 @@ def main(
     ] = False,
 ) -> None:
     """Answer analytics questions locally; see README for the full workflow."""
+
+
+@app.command("ask")
+def ask(  # noqa: PLR0913, PLR0917 - every D25 flag is part of the CLI contract
+    question: Annotated[str, typer.Argument(help="Analytics question in Spanish or English.")],
+    lang: Annotated[
+        str,
+        typer.Option("--lang", help="Question/answer language: auto, es or en."),
+    ] = "auto",
+    llm: Annotated[
+        str,
+        typer.Option("--llm", help="LLM backend: ollama (live) or replay (recorded)."),
+    ] = "ollama",
+    model: Annotated[
+        str | None,
+        typer.Option("--model", help="Model name override (default from settings)."),
+    ] = None,
+    no_narrate: Annotated[
+        bool,
+        typer.Option("--no-narrate", help="Use the deterministic answer template."),
+    ] = False,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Print exactly one JSON document to stdout."),
+    ] = False,
+    trace: Annotated[
+        bool,
+        typer.Option("--trace", help="Show phase timings, attempts and guardrail events."),
+    ] = False,
+    manifest: Annotated[
+        Path | None,
+        typer.Option("--manifest", help="External lakehouse manifest (T11 adapter)."),
+    ] = None,
+) -> None:
+    """Ask one analytics question: answer, SQL, table, chart and optional trace."""
+
+    if lang not in _LANGUAGES:
+        typer.echo(f"error: --lang must be one of {sorted(_LANGUAGES)}", err=True)
+        raise typer.Exit(2)
+    if llm not in _LLM_BACKENDS:
+        typer.echo(f"error: --llm must be one of {sorted(_LLM_BACKENDS)}", err=True)
+        raise typer.Exit(2)
+    settings = Settings()
+    updates: dict[str, object] = {"llm_backend": llm}
+    if model:
+        updates["model"] = model
+    if manifest is not None:
+        updates["lakehouse_manifest"] = manifest
+    settings = settings.model_copy(update=updates)
+    configure_logging(settings)
+    language = None if lang == "auto" else Language(lang)
+    try:
+        agent = build_agent(settings, narrate=not no_narrate)
+        answer = AskQuestion(agent).execute(question, language=language)
+    except WarehouseUnavailable as exc:
+        typer.echo(f"error: warehouse unavailable: {exc}", err=True)
+        raise typer.Exit(3) from exc
+    except ConfigError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    except SqlAgentError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(3) from exc
+    if json_output:
+        typer.echo(answer_to_json(answer))
+    else:
+        render_answer(answer, trace=trace)
+    raise typer.Exit(0 if answer.status is not Status.FAILED else 1)
 
 
 @app.command("doctor")

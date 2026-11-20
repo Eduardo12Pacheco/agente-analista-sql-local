@@ -7,12 +7,30 @@ stdout as exactly one document (D25).
 
 from __future__ import annotations
 
+import io
 import logging
 import sys
+from typing import TextIO, cast
 
 import structlog
 
 from sqlagent.config import Settings
+
+
+class _CurrentStderr(io.TextIOBase):
+    """A file-like proxy resolving ``sys.stderr`` at write time.
+
+    ``PrintLoggerFactory`` stores the stream it is given; capturing the actual
+    ``sys.stderr`` object would keep writing to a closed stream after a test
+    runner or a CLI harness swaps it.  Resolving per call keeps logs flowing to
+    whatever stderr is current.
+    """
+
+    def write(self, message: str) -> int:
+        return sys.stderr.write(message)
+
+    def flush(self) -> None:
+        sys.stderr.flush()
 
 
 def configure_logging(settings: Settings | None = None) -> None:
@@ -34,7 +52,7 @@ def configure_logging(settings: Settings | None = None) -> None:
             renderer,
         ],
         wrapper_class=structlog.make_filtering_bound_logger(level),
-        logger_factory=structlog.PrintLoggerFactory(file=sys.stderr),
+        logger_factory=structlog.PrintLoggerFactory(file=cast(TextIO, _CurrentStderr())),
         cache_logger_on_first_use=True,
     )
 

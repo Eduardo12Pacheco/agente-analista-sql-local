@@ -11,12 +11,19 @@ from pathlib import Path
 
 from sqlagent.adapters.llm.cassette import ReplayLLM
 from sqlagent.adapters.llm.ollama import OllamaLLM
+from sqlagent.adapters.semantic.fewshots_repository import load_fewshots
+from sqlagent.adapters.semantic.yaml_repository import YamlSemanticLayerRepository
 from sqlagent.adapters.warehouse.duckdb_warehouse import DuckDbWarehouse
 from sqlagent.adapters.warehouse.etl import BUNDLE_DIR, MANIFEST_NAME
 from sqlagent.adapters.warehouse.materialize import ensure_warehouse
-from sqlagent.application.ports import LLMPort, WarehouseLimits
+from sqlagent.application.agent.events import EventSink
+from sqlagent.application.agent.machine import AnalystAgent
+from sqlagent.application.ports import LLMPort, WarehouseLimits, WarehousePort
 from sqlagent.config import Settings
 from sqlagent.domain.errors import ConfigError
+from sqlagent.domain.retrieval import Bm25Retriever, FewShot
+from sqlagent.domain.semantic import SemanticLayer
+from sqlagent.domain.sql_policy import SqlPolicy
 
 DEFAULT_PROMPT_VERSION = "p1"
 RESOURCES_DIR = Path(__file__).resolve().parent / "resources"
@@ -68,3 +75,43 @@ def build_warehouse(
         threads=settings.threads,
     )
     return DuckDbWarehouse(path, limits, manifest_path=Path(bundle_dir) / MANIFEST_NAME)
+
+
+def build_semantic() -> SemanticLayer:
+    """Load the bundled bilingual semantic layer (S6)."""
+
+    return YamlSemanticLayerRepository().load()
+
+
+def build_agent(  # noqa: PLR0913 - composition options are explicit
+    settings: Settings,
+    *,
+    llm: LLMPort | None = None,
+    warehouse: WarehousePort | None = None,
+    semantic: SemanticLayer | None = None,
+    sink: EventSink | None = None,
+    narrate: bool = True,
+    fewshots: tuple[FewShot, ...] | None = None,
+) -> AnalystAgent:
+    """Compose the analyst state machine from ready or default adapters."""
+
+    resolved_semantic = semantic if semantic is not None else build_semantic()
+    resolved_warehouse = warehouse if warehouse is not None else build_warehouse(settings)
+    resolved_llm = llm if llm is not None else build_llm(settings)
+    resolved_fewshots = load_fewshots() if fewshots is None else fewshots
+    retriever = Bm25Retriever(resolved_semantic, resolved_fewshots)
+    policy = SqlPolicy(
+        catalog_tables=resolved_warehouse.catalog().table_names(),
+        max_rows=settings.max_rows,
+    )
+    return AnalystAgent(
+        resolved_llm,
+        resolved_warehouse,
+        policy,
+        retriever,
+        resolved_semantic,
+        settings,
+        sink=sink,
+        narrate=narrate,
+        fewshots=resolved_fewshots,
+    )

@@ -1,0 +1,15 @@
+# Gitleaks configuration.
+#
+# The record/replay cassettes store a SHA-256 request fingerprint in the
+# ``key`` field (D18). Some of those hex digests match the entropy heuristic of
+# the generic-api-key rule and are not credentials; no prompt or response in a
+# cassette contains a secret. Everything else keeps the default rule set.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "SHA-256 request fingerprints in recorded model cassettes (D18)"
+paths = [
+  '''src/sqlagent/resources/recordings/.*\.jsonl''',
+  '''eval/recordings-extra/.*\.jsonl''',
+]

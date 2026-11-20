@@ -10,11 +10,75 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Protocol, runtime_checkable
+from typing import Any, Literal, Protocol, runtime_checkable
 
-from sqlagent.domain.models import ColumnInfo, QueryResult
+from sqlagent.domain.models import ColumnInfo, QueryResult, TokenUsage
 from sqlagent.domain.semantic import SemanticLayer
 from sqlagent.domain.sql_policy import ValidatedQuery
+
+LLMStage = Literal["generate", "repair", "narrate"]
+
+
+@dataclass(frozen=True, slots=True)
+class LLMOptions:
+    """Sampling options sent with every LLM call (D12/D18)."""
+
+    temperature: float = 0.0
+    seed: int = 42
+    num_ctx: int = 8192
+    num_predict: int = 768
+
+
+@dataclass(frozen=True, slots=True)
+class LLMRequest:
+    """One backend-independent completion request.
+
+    ``question_id`` is cassette metadata only and deliberately excluded from the
+    request key: re-recording the same prompt for a different benchmark item must
+    not change its identity (D18).
+    """
+
+    messages: tuple[Mapping[str, str], ...]
+    model: str
+    stage: LLMStage = "generate"
+    json_schema: Mapping[str, Any] | None = None
+    options: LLMOptions = field(default_factory=LLMOptions)
+    question_id: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class LLMResponse:
+    """Content plus the usage and latency metadata the trace needs (S12)."""
+
+    content: str
+    usage: TokenUsage = field(default_factory=TokenUsage)
+    latency_ms: float = 0.0
+    model: str = ""
+    model_digest: str | None = None
+    backend: str = ""
+    stage: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class BackendInfo:
+    """Describe the configured backend for ``doctor`` and the web status pill."""
+
+    backend: str
+    model: str
+    digest: str | None = None
+    available: bool = True
+    detail: str = ""
+
+
+@runtime_checkable
+class LLMPort(Protocol):
+    """A completion backend usable by the agent and evaluation harness (S20)."""
+
+    def complete(self, request: LLMRequest) -> LLMResponse:
+        """Return one completion or raise an ``LLMError`` subclass."""
+
+    def describe(self) -> BackendInfo:
+        """Return stable backend/model metadata without requiring a call."""
 
 
 @dataclass(frozen=True, slots=True)

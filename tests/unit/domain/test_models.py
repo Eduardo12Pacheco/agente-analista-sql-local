@@ -163,35 +163,33 @@ def test_error_hierarchy() -> None:
 
 def test_guardrail_code_covers_the_policy_cases_from_d14() -> None:
     expected = {
-        "EMPTY_SQL",
+        "EMPTY",
         "TOO_LONG",
         "PARSE_ERROR",
-        "MULTIPLE_STATEMENTS",
+        "MULTI_STATEMENT",
         "NOT_SELECT",
         "FORBIDDEN_NODE",
         "FORBIDDEN_FUNCTION",
-        "FORBIDDEN_TABLE",
+        "UNKNOWN_TABLE",
         "TABLE_FUNCTION",
-        "SYSTEM_CATALOG",
-        "TOO_DEEP",
         "TOO_COMPLEX",
     }
 
-    assert {code.value for code in GuardrailCode} >= expected
+    assert {code.value for code in GuardrailCode} == expected
 
 
 def test_guardrail_violation_carries_code_message_and_detail() -> None:
     violation = GuardrailViolation(
-        code=GuardrailCode.FORBIDDEN_TABLE,
+        code=GuardrailCode.UNKNOWN_TABLE,
         message="table is not allowed",
         detail="tenders_archive",
     )
 
-    assert violation.code is GuardrailCode.FORBIDDEN_TABLE
+    assert violation.code is GuardrailCode.UNKNOWN_TABLE
     assert violation.message == "table is not allowed"
     assert violation.detail == "tenders_archive"
     rendered = str(violation)
-    assert "FORBIDDEN_TABLE" in rendered
+    assert "UNKNOWN_TABLE" in rendered
     assert "table is not allowed" in rendered
     assert "tenders_archive" in rendered
 

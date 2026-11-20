@@ -11,19 +11,21 @@ from enum import StrEnum
 
 
 class GuardrailCode(StrEnum):
-    """Stable, machine-readable SQL guardrail rejection reasons (D14)."""
+    """Stable, machine-readable SQL guardrail rejection reasons (D14).
 
-    EMPTY_SQL = "EMPTY_SQL"
+    The member names and values are the exact D14 contract: downstream layers
+    (agent refusal handling, evaluation taxonomy, UI badges) key off them.
+    """
+
+    EMPTY = "EMPTY"
     TOO_LONG = "TOO_LONG"
     PARSE_ERROR = "PARSE_ERROR"
-    MULTIPLE_STATEMENTS = "MULTIPLE_STATEMENTS"
+    MULTI_STATEMENT = "MULTI_STATEMENT"
     NOT_SELECT = "NOT_SELECT"
     FORBIDDEN_NODE = "FORBIDDEN_NODE"
     FORBIDDEN_FUNCTION = "FORBIDDEN_FUNCTION"
-    FORBIDDEN_TABLE = "FORBIDDEN_TABLE"
+    UNKNOWN_TABLE = "UNKNOWN_TABLE"
     TABLE_FUNCTION = "TABLE_FUNCTION"
-    SYSTEM_CATALOG = "SYSTEM_CATALOG"
-    TOO_DEEP = "TOO_DEEP"
     TOO_COMPLEX = "TOO_COMPLEX"
 
 

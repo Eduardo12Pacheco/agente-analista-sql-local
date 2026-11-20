@@ -1,0 +1,135 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "local-sql-analyst-agent"
+version = "0.1.0.dev0"
+description = "Local-first AI data analyst over a bundled DuckDB warehouse, with SQL guardrails and evaluation."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.12"
+authors = [{ name = "Eduardo Pacheco" }]
+keywords = ["text-to-sql", "duckdb", "ollama", "local-first", "data-analysis"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Typing :: Typed",
+]
+dependencies = [
+  "duckdb>=2.0.0,<3",
+  "sqlglot>=30.33.0,<31",
+  "pydantic>=2.14,<3",
+  "pydantic-settings>=2.16,<3",
+  "httpx>=0.28.1,<1",
+  "typer>=0.29,<1",
+  "rich>=15,<16",
+  "fastapi>=0.165,<1",
+  "uvicorn>=0.54,<1",
+  "jinja2>=3.1.6,<4",
+  "structlog>=26.1,<27",
+  "pyyaml>=6.0.3,<7",
+  "platformdirs>=4.14,<5",
+]
+
+[project.scripts]
+sqlagent = "sqlagent.adapters.cli.main:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sqlagent"]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[dependency-groups]
+dev = [
+  "pytest>=9.2",
+  "pytest-cov>=7.1",
+  "hypothesis>=6.170",
+  "ruff>=0.17",
+  "mypy>=2.4",
+  "import-linter>=2.17",
+  "pip-audit>=2.10",
+  "playwright>=1.65",
+  "pytest-playwright>=0.10",
+  "pillow>=13",
+  "types-PyYAML",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "PL", "RUF", "S", "C4", "PT", "TID"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["sqlagent"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+files = ["src"]
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+minversion = "9.0"
+addopts = "-m \"not e2e\""
+testpaths = ["tests"]
+markers = [
+  "unit: fast, isolated tests",
+  "integration: tests crossing adapter boundaries",
+  "contract: port contract suites",
+  "architecture: dependency-direction and layering checks",
+  "e2e: end-to-end tests (excluded by default)",
+  "slow: tests taking more than a few seconds",
+]
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+source = ["sqlagent"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+]
+
+[tool.importlinter]
+root_packages = ["sqlagent"]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Hexagonal layers"
+type = "layers"
+layers = [
+  "sqlagent.adapters",
+  "sqlagent.application",
+  "sqlagent.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "Domain stays pure"
+type = "forbidden"
+source_modules = ["sqlagent.domain"]
+forbidden_modules = [
+  "sqlagent.adapters",
+  "sqlagent.application",
+  "duckdb",
+  "httpx",
+  "fastapi",
+  "typer",
+  "yaml",
+  "pydantic",
+]

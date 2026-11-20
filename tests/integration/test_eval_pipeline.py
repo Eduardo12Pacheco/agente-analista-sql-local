@@ -246,6 +246,8 @@ def test_eval_replay_without_recordings_exits_four(
             "eval",
             "--llm",
             "replay",
+            "--model",
+            "unrecorded-model:1b",
             "--limit",
             "3",
             "--out",

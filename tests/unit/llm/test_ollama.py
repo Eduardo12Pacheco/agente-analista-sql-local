@@ -234,7 +234,9 @@ def test_describe_uses_cached_digest_after_probe() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/api/version":
             return httpx.Response(200, json={"version": "0.40.16"})
-        return httpx.Response(200, json={"models": [{"name": "qwen3:8b", "digest": "sha256:abc"}]})
+        return httpx.Response(
+            200, json={"models": [{"name": "qwen2.5-coder:7b", "digest": "sha256:abc"}]}
+        )
 
     llm = OllamaLLM(Settings(), client=client_with(handler))
     before = llm.describe()
@@ -265,7 +267,13 @@ def test_model_digest_is_fetched_once_from_tags_and_cached() -> None:
         if request.url.path == "/api/tags":
             tags_calls += 1
             return httpx.Response(
-                200, json={"models": [{"name": "qwen3:8b", "digest": "sha256:abc"}]}
+                200,
+                json={
+                    "models": [
+                        {"name": "qwen3:8b", "digest": "sha256:abc"},
+                        {"name": "qwen2.5-coder:7b", "digest": "sha256:def"},
+                    ]
+                },
             )
         return httpx.Response(200, json=CHAT_REPLY)
 
@@ -277,7 +285,7 @@ def test_model_digest_is_fetched_once_from_tags_and_cached() -> None:
     assert first.model_digest == "sha256:abc"
     assert second.model_digest == "sha256:abc"
     assert tags_calls == 1
-    assert llm.describe().digest == "sha256:abc"
+    assert llm.describe().digest == "sha256:def"
 
 
 def test_digest_lookup_failure_does_not_fail_the_completion() -> None:

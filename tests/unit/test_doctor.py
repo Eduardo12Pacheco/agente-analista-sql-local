@@ -63,7 +63,7 @@ def test_doctor_without_ollama_reports_commands_and_exits_zero(
     assert result.exit_code == 0
     assert "Ollama: not reachable" in output
     assert "scripts/ollama-docker.sh up" in output
-    assert "scripts/ollama-docker.sh pull qwen3:8b" in output
+    assert "scripts/ollama-docker.sh pull qwen2.5-coder:7b" in output
     assert "warehouse OK" in output
 
 
@@ -78,7 +78,7 @@ def test_doctor_reports_model_presence(tmp_path: Path, monkeypatch: Any) -> None
             return OllamaProbe(
                 reachable=True,
                 version="0.40.16",
-                models=("qwen3:8b",),
+                models=("qwen2.5-coder:7b",),
                 model_present=True,
             )
 
@@ -92,7 +92,7 @@ def test_doctor_reports_model_presence(tmp_path: Path, monkeypatch: Any) -> None
     output = combined_output(result)
     assert result.exit_code == 0
     assert "reachable (version 0.40.16)" in output
-    assert "qwen3:8b is installed" in output
+    assert "qwen2.5-coder:7b is installed" in output
 
 
 def test_doctor_reports_missing_model_with_pull_command(tmp_path: Path, monkeypatch: Any) -> None:
@@ -114,5 +114,5 @@ def test_doctor_reports_missing_model_with_pull_command(tmp_path: Path, monkeypa
 
     output = combined_output(result)
     assert result.exit_code == 0
-    assert "qwen3:8b is not installed" in output
-    assert "ollama pull qwen3:8b" in output
+    assert "qwen2.5-coder:7b is not installed" in output
+    assert "ollama pull qwen2.5-coder:7b" in output

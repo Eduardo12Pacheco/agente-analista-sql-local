@@ -14,8 +14,8 @@ from platformdirs import user_data_dir
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Provisional default until T12 measures benchmark v1 on both candidate models (D10).
-DEFAULT_MODEL = "qwen3:8b"
+# Chosen in T12 from benchmark v1: qwen2.5-coder:7b scored higher EX than qwen3:8b (D10).
+DEFAULT_MODEL = "qwen2.5-coder:7b"
 
 
 def _default_data_dir() -> Path:

@@ -9,7 +9,7 @@ runtime; pass overrides as environment variables or keywords in tests.
 |---|---|---|
 | `SQLAGENT_LLM_BACKEND` | `ollama` | Completion backend: `ollama` or `replay` (committed cassette, offline). |
 | `SQLAGENT_OLLAMA_URL` | `http://127.0.0.1:11434` | Ollama base URL. Non-loopback hosts require `SQLAGENT_ALLOW_REMOTE_LLM=1`. |
-| `SQLAGENT_MODEL` | `qwen3:8b` | Ollama model name used for completions (provisional until T12). |
+| `SQLAGENT_MODEL` | `qwen2.5-coder:7b` | Ollama model name used for completions (chosen in T12 by benchmark EX, D10). |
 | `SQLAGENT_NUM_CTX` | `8192` | Context window sent as `options.num_ctx`. |
 | `SQLAGENT_TEMPERATURE` | `0.0` | Sampling temperature (deterministic default). |
 | `SQLAGENT_SEED` | `42` | Sampling seed sent as `options.seed`. |

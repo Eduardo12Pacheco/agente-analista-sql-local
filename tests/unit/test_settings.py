@@ -27,7 +27,7 @@ def test_defaults_match_d26() -> None:
 
     assert settings.llm_backend == "ollama"
     assert settings.ollama_url == "http://127.0.0.1:11434"
-    assert settings.model == DEFAULT_MODEL == "qwen3:8b"
+    assert settings.model == DEFAULT_MODEL == "qwen2.5-coder:7b"
     assert settings.num_ctx == 8192
     assert settings.temperature == 0.0
     assert settings.seed == 42

@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal, Protocol, runtime_checkable
 
+from sqlagent.application.evaluation.benchmark import Benchmark
 from sqlagent.domain.models import ColumnInfo, QueryResult, TokenUsage
 from sqlagent.domain.semantic import SemanticLayer
 from sqlagent.domain.sql_policy import ValidatedQuery
@@ -141,3 +142,11 @@ class SemanticLayerRepository(Protocol):
 
     def load(self) -> SemanticLayer:
         """Return the validated semantic layer."""
+
+
+@runtime_checkable
+class BenchmarkRepository(Protocol):
+    """Load one versioned benchmark and its gold SQL (S23)."""
+
+    def load(self, version: str = "v1") -> Benchmark:
+        """Return the validated benchmark or raise ``ConfigError``."""

@@ -119,3 +119,38 @@ def test_pair_must_have_two_languages_and_one_sql() -> None:
             version="v1",
             items=(es, make_item(id="q002", pair_id="p01", gold_sql="SELECT 1 AS one")),
         )
+
+
+def test_repository_loads_committed_benchmark() -> None:
+    benchmark = YamlBenchmarkRepository().load("v1")
+
+    assert benchmark.version == "v1"
+    assert len(benchmark.items) == 72
+    assert benchmark.items[0].id == "q001"
+    assert benchmark.items[-1].id == "q072"
+    counts = build_counts(benchmark)
+    assert counts.pairs == PAIR_COUNT
+    assert counts.language == {"es": 38, "en": 34}
+
+
+def test_repository_missing_file_raises_config_error(tmp_path: Path) -> None:
+    repository = YamlBenchmarkRepository(tmp_path)
+
+    with pytest.raises(ConfigError, match=r"questions\.yaml"):
+        repository.load("v1")
+
+
+def test_repository_rejects_malformed_yaml(tmp_path: Path) -> None:
+    (tmp_path / "v1").mkdir()
+    (tmp_path / "v1" / "questions.yaml").write_text("items: [\n", encoding="utf-8")
+
+    with pytest.raises(ConfigError, match="parse"):
+        YamlBenchmarkRepository(tmp_path).load("v1")
+
+
+def test_repository_rejects_non_list_document(tmp_path: Path) -> None:
+    (tmp_path / "v1").mkdir()
+    (tmp_path / "v1" / "questions.yaml").write_text("schema: v1\n", encoding="utf-8")
+
+    with pytest.raises(ConfigError, match="list"):
+        YamlBenchmarkRepository(tmp_path).load("v1")

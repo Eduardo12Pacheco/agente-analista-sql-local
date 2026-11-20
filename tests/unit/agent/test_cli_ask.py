@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 from typer.testing import CliRunner
@@ -21,9 +22,13 @@ def narrate() -> str:
     return json.dumps({"answer": "Hay 3 procesos."})
 
 
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+
 def test_ask_help_lists_every_d25_option() -> None:
     result = CliRunner().invoke(app, ["ask", "--help"])
     assert result.exit_code == 0
+    plain = _ANSI.sub("", result.stdout)
     for option in (
         "--lang",
         "--llm",
@@ -33,7 +38,7 @@ def test_ask_help_lists_every_d25_option() -> None:
         "--trace",
         "--manifest",
     ):
-        assert option in result.stdout
+        assert option in plain
 
 
 def test_ask_prints_sql_table_and_exits_zero(make_agent, monkeypatch: pytest.MonkeyPatch) -> None:

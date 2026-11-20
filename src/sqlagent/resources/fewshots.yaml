@@ -1,0 +1,82 @@
+schema: sqlagent.fewshots/v1
+
+# Bilingual worked examples for GENERATE prompts (D13, T7).
+# These are hand-written against the D7 schema and deliberately do not reuse
+# benchmark v1 questions or gold SQL (T8 asserts that invariant).  At most two
+# per language are injected into a prompt, and only four in total.
+
+fewshots:
+  - question: "¿Cuántos proveedores están registrados en el sistema?"
+    sql: "SELECT COUNT(*) AS n FROM suppliers"
+    language: es
+    tables: [suppliers]
+
+  - question: "How many awards were recorded?"
+    sql: "SELECT COUNT(*) AS n FROM awards"
+    language: en
+    tables: [awards]
+
+  - question: "¿Cuál es el monto planificado total por método de contratación?"
+    sql: >-
+      SELECT procurement_method, SUM(planned_amount_usd) AS total_planned_usd
+      FROM tenders
+      GROUP BY procurement_method
+      ORDER BY total_planned_usd DESC NULLS LAST
+    language: es
+    tables: [tenders]
+
+  - question: "Which 5 buyers published the most tenders?"
+    sql: >-
+      SELECT b.buyer_name, COUNT(*) AS n
+      FROM tenders t
+      JOIN buyers b ON b.buyer_id = t.buyer_id
+      GROUP BY b.buyer_id, b.buyer_name
+      ORDER BY n DESC, b.buyer_id
+      LIMIT 5
+    language: en
+    tables: [tenders, buyers]
+
+  - question: "¿Cuántos procesos usaron subasta inversa?"
+    sql: "SELECT COUNT(*) AS n FROM tenders WHERE procurement_type = 'subasta_inversa'"
+    language: es
+    tables: [tenders]
+
+  - question: "What is the average awarded amount per award?"
+    sql: "SELECT AVG(amount_usd) AS avg_awarded_usd FROM awards"
+    language: en
+    tables: [awards]
+
+  - question: "¿Cuántos ítems tiene en promedio cada proceso?"
+    sql: >-
+      SELECT AVG(item_count) AS avg_items
+      FROM (
+        SELECT tender_id, COUNT(*) AS item_count
+        FROM tender_items
+        GROUP BY tender_id
+      )
+    language: es
+    tables: [tender_items]
+
+  - question: "Which provinces have the most suppliers?"
+    sql: >-
+      SELECT province, COUNT(*) AS n
+      FROM suppliers
+      WHERE province IS NOT NULL
+      GROUP BY province
+      ORDER BY n DESC, province
+      LIMIT 10
+    language: en
+    tables: [suppliers]
+
+  - question: "¿Cuántos contratos están activos?"
+    sql: "SELECT COUNT(*) AS n FROM contracts WHERE status = 'active'"
+    language: es
+    tables: [contracts]
+
+  - question: "What percentage of tenders used direct contracting?"
+    sql: >-
+      SELECT ROUND(100.0 * AVG(CASE WHEN procurement_method = 'direct' THEN 1 ELSE 0 END), 2)
+      AS pct_direct
+      FROM tenders
+    language: en
+    tables: [tenders]

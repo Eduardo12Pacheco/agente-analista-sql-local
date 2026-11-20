@@ -6,11 +6,14 @@ T4 adds the ``data`` command group (``info``, ``verify``, ``build``); the
 
 from __future__ import annotations
 
+import threading
+import webbrowser
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
 import typer
+import uvicorn
 
 from sqlagent import __version__
 from sqlagent.adapters.benchmark.yaml_repository import YamlBenchmarkRepository
@@ -29,6 +32,7 @@ from sqlagent.adapters.warehouse.etl import (
     load_manifest,
     verify_bundle,
 )
+from sqlagent.adapters.web.app import create_app
 from sqlagent.application.evaluation.benchmark import Category
 from sqlagent.application.evaluation.runner import TrackingLLM
 from sqlagent.application.use_cases.ask import AskQuestion
@@ -54,6 +58,7 @@ from sqlagent.logging import configure_logging
 
 _LLM_BACKENDS = {"ollama", "replay"}
 _LANGUAGES = {"auto", "es", "en"}
+_MAX_PORT = 65535
 
 app = typer.Typer(
     name="sqlagent",
@@ -330,6 +335,73 @@ def eval_command(  # noqa: PLR0912, PLR0913, PLR0915, PLR0917 - D25 contract
     finally:
         if warehouse is not None:
             warehouse.close()
+
+
+@app.command("serve")
+def serve(  # noqa: PLR0913, PLR0917 - every D25 flag is part of the CLI contract
+    host: Annotated[
+        str,
+        typer.Option("--host", help="Interface to bind (loopback by default)."),
+    ] = "127.0.0.1",
+    port: Annotated[
+        int,
+        typer.Option("--port", help="Local port (17000-17999 by portfolio convention)."),
+    ] = 17080,
+    llm: Annotated[
+        str,
+        typer.Option("--llm", help="LLM backend: ollama (live) or replay (recorded)."),
+    ] = "ollama",
+    model: Annotated[
+        str | None,
+        typer.Option("--model", help="Model name override (default from settings)."),
+    ] = None,
+    demo: Annotated[
+        bool,
+        typer.Option("--demo", help="Replay recorded outputs offline (implies --llm replay)."),
+    ] = False,
+    open_browser: Annotated[
+        bool,
+        typer.Option("--open", help="Open the chat in the default browser."),
+    ] = False,
+    manifest: Annotated[
+        Path | None,
+        typer.Option("--manifest", help="External lakehouse manifest (T11 adapter)."),
+    ] = None,
+) -> None:
+    """Serve the local web chat (FastAPI + HTMX + SSE)."""
+
+    if llm not in _LLM_BACKENDS:
+        typer.echo(f"error: --llm must be one of {sorted(_LLM_BACKENDS)}", err=True)
+        raise typer.Exit(2)
+    if not 0 <= port <= _MAX_PORT:
+        typer.echo("error: --port must be between 0 and 65535", err=True)
+        raise typer.Exit(2)
+    updates: dict[str, object] = {"llm_backend": "replay" if demo else llm}
+    if model:
+        updates["model"] = model
+    if manifest is not None:
+        updates["lakehouse_manifest"] = manifest
+    settings = Settings().model_copy(update=updates)
+    configure_logging(settings)
+    try:
+        application = create_app(settings)
+    except ConfigError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    except WarehouseUnavailable as exc:
+        typer.echo(f"error: warehouse unavailable: {exc}", err=True)
+        raise typer.Exit(3) from exc
+    except LLMError as exc:
+        typer.echo(f"error: LLM backend: {exc}", err=True)
+        raise typer.Exit(3) from exc
+    url = f"http://{host}:{port}/"
+    typer.echo(f"sqlagent web: {url} ({'demo/replay' if demo else llm})")
+    if open_browser:
+        threading.Timer(1.0, webbrowser.open, args=(url,)).start()
+    try:
+        uvicorn.run(application, host=host, port=port, log_level="info")
+    except KeyboardInterrupt:  # pragma: no cover - interactive shutdown
+        raise typer.Exit(130) from None
 
 
 @app.command("doctor")

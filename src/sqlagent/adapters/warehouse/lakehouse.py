@@ -169,7 +169,7 @@ class LakehouseManifest(BaseModel):
         raw = str(value)
         windows = PureWindowsPath(raw)
         posix = PurePosixPath(raw)
-        if value.is_absolute() or windows.is_absolute() or posix.is_absolute():
+        if value.is_absolute() or value.anchor or windows.anchor or posix.anchor:
             raise ValueError("duckdb_file must be relative to the manifest directory")
         parts = {*windows.parts, *posix.parts, *value.parts}
         if ".." in parts:

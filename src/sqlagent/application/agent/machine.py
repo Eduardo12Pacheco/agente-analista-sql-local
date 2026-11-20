@@ -117,6 +117,7 @@ class _RunState:
     pending_kind: AttemptKind = "generate"
     last_error: str = ""
     timings: list[PhaseTiming] = field(default_factory=list)
+    sink: EventSink | None = None
 
 
 class AnalystAgent:
@@ -168,14 +169,21 @@ class AnalystAgent:
         *,
         language: Language | None = None,
         history: TurnContext | None = None,
+        sink: EventSink | None = None,
     ) -> AgentAnswer:
-        """Answer one question; never raises, always returns a valid answer."""
+        """Answer one question; never raises, always returns a valid answer.
+
+        ``sink`` overrides the instance sink for this run only, which lets the
+        web adapter attach one event queue per request without rebuilding the
+        agent (the evaluation and CLI paths keep the constructor sink).
+        """
 
         state = _RunState(
             question=question,
             language=language or Language.EN,
             language_override=language,
             history=history,
+            sink=sink,
         )
         try:
             while state.phase not in TERMINAL_PHASES:
@@ -353,7 +361,15 @@ class AnalystAgent:
             state,
             EventKind.RESULT,
             None,
-            {"row_count": result.row_count, "truncated": result.truncated},
+            {
+                "row_count": result.row_count,
+                "truncated": result.truncated,
+                "elapsed_ms": result.elapsed_ms,
+                "columns": [
+                    {"name": column.name, "type": column.type} for column in result.columns
+                ],
+                "rows": [list(row) for row in result.rows[: self._settings.ui_rows]],
+            },
         )
         return Phase.CHART
 
@@ -398,7 +414,20 @@ class AnalystAgent:
         self._emit(state, EventKind.PHASE, Phase.CHART)
         assert state.result is not None  # noqa: S101
         state.chart = choose_chart(state.result.columns, state.result.rows, "query_result")
-        self._emit(state, EventKind.CHART, None, {"kind": getattr(state.chart, "kind", "none")})
+        self._emit(
+            state,
+            EventKind.CHART,
+            None,
+            {
+                "kind": state.chart.kind,
+                "x": state.chart.x,
+                "y": list(state.chart.y),
+                "series": state.chart.series,
+                "title": state.chart.title,
+                "reason": state.chart.reason,
+                "truncated_categories": state.chart.truncated_categories,
+            },
+        )
         return Phase.NARRATE
 
     def _narrate_phase(self, state: _RunState) -> Phase:
@@ -553,7 +582,9 @@ class AnalystAgent:
         payload: dict[str, object] | None = None,
     ) -> None:
         try:
-            self._sink.emit(AgentEvent(kind=kind, phase=phase, payload=payload or {}))
+            (state.sink or self._sink).emit(
+                AgentEvent(kind=kind, phase=phase, payload=payload or {})
+            )
         except Exception:
             logger.warning("agent.sink_failed", kind=kind.value)
 

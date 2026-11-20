@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 
+from sqlagent.application.agent.events import EventSink
 from sqlagent.application.agent.machine import AnalystAgent
 from sqlagent.application.agent.state import TurnContext
 from sqlagent.domain.models import AgentAnswer, Language, Status
@@ -44,11 +45,12 @@ class AskQuestion:
         session_id: str | None = None,
         *,
         language: Language | None = None,
+        sink: EventSink | None = None,
     ) -> AgentAnswer:
         """Answer ``question``, optionally continuing ``session_id``'s last turn."""
 
         history = self._turns.get(session_id) if session_id else None
-        answer = self._agent.run(question, language=language, history=history)
+        answer = self._agent.run(question, language=language, history=history, sink=sink)
         if session_id and answer.status is Status.OK and answer.sql:
             self._remember(session_id, TurnContext(question=question, sql=answer.sql))
         return answer

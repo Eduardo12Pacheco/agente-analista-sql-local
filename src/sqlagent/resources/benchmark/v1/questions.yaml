@@ -358,3 +358,358 @@
   - pair
   - join
   notes: ''
+- id: q031
+  category: join
+  difficulty: medium
+  lang: es
+  question: ¿Cuántos contratos están asociados a procesos de la entidad contratante IESS?
+  gold_sql: SELECT COUNT(*) AS n FROM contracts c JOIN tenders t ON t.tender_id = c.tender_id JOIN buyers b ON b.buyer_id = t.buyer_id WHERE b.buyer_name = 'INSTITUTO ECUATORIANO DE SEGURIDAD SOCIAL'
+  pair_id: null
+  expect: answer
+  tags:
+  - join
+  - entity
+  notes: ''
+- id: q032
+  category: join
+  difficulty: medium
+  lang: en
+  question: Which are the ten buyer provinces with the highest total awarded amount?
+  gold_sql: SELECT b.province, ROUND(SUM(a.amount_usd), 2) AS total_usd FROM awards a JOIN tenders t ON t.tender_id = a.tender_id JOIN buyers b ON b.buyer_id = t.buyer_id WHERE b.province IS NOT NULL GROUP BY b.province ORDER BY total_usd DESC, b.province LIMIT 10
+  pair_id: null
+  expect: answer
+  tags:
+  - join
+  - ranking
+  notes: ''
+- id: q033
+  category: join
+  difficulty: hard
+  lang: es
+  question: ¿Cuántos procesos tienen al menos un ítem registrado?
+  gold_sql: SELECT COUNT(DISTINCT t.tender_id) AS n FROM tenders t JOIN tender_items i ON i.tender_id = t.tender_id
+  pair_id: null
+  expect: answer
+  tags:
+  - join
+  - items
+  notes: ''
+- id: q034
+  category: join
+  difficulty: hard
+  lang: en
+  question: List the supplier name and number of awards for the top 5 suppliers.
+  gold_sql: SELECT s.supplier_name, COUNT(*) AS n FROM awards a JOIN suppliers s ON s.supplier_id = a.supplier_id GROUP BY s.supplier_id, s.supplier_name ORDER BY n DESC, s.supplier_id LIMIT 5
+  pair_id: null
+  expect: answer
+  tags:
+  - join
+  - ranking
+  notes: ''
+- id: q035
+  category: join
+  difficulty: hard
+  lang: es
+  question: ¿Cuáles son los 5 proveedores con mayor monto adjudicado entre los que ganaron al menos 50 adjudicaciones?
+  gold_sql: SELECT s.supplier_name, ROUND(SUM(a.amount_usd), 2) AS total_usd FROM awards a JOIN suppliers s ON s.supplier_id = a.supplier_id GROUP BY s.supplier_id, s.supplier_name HAVING COUNT(*) >= 50 ORDER BY total_usd DESC, s.supplier_id LIMIT 5
+  pair_id: null
+  expect: answer
+  tags:
+  - join
+  - ranking
+  notes: ''
+- id: q036
+  category: grouping_topk
+  difficulty: easy
+  lang: en
+  question: How many tenders were awarded per procurement method?
+  gold_sql: SELECT procurement_method, COUNT(*) AS n FROM tenders WHERE procurement_method IS NOT NULL GROUP BY procurement_method ORDER BY n DESC, procurement_method
+  pair_id: p07
+  expect: answer
+  tags:
+  - pair
+  - grouping
+  notes: ''
+- id: q037
+  category: grouping_topk
+  difficulty: easy
+  lang: es
+  question: ¿Cuántos procesos se adjudicaron por método de contratación?
+  gold_sql: SELECT procurement_method, COUNT(*) AS n FROM tenders WHERE procurement_method IS NOT NULL GROUP BY procurement_method ORDER BY n DESC, procurement_method
+  pair_id: p07
+  expect: answer
+  tags:
+  - pair
+  - grouping
+  notes: ''
+- id: q038
+  category: grouping_topk
+  difficulty: medium
+  lang: en
+  question: What is the total awarded amount by supplier kind?
+  gold_sql: SELECT s.supplier_kind, ROUND(SUM(a.amount_usd), 2) AS total_usd FROM awards a JOIN suppliers s ON s.supplier_id = a.supplier_id GROUP BY s.supplier_kind ORDER BY total_usd DESC, s.supplier_kind
+  pair_id: p08
+  expect: answer
+  tags:
+  - pair
+  - grouping
+  notes: ''
+- id: q039
+  category: grouping_topk
+  difficulty: medium
+  lang: es
+  question: ¿Cuál es el monto total adjudicado por tipo de proveedor?
+  gold_sql: SELECT s.supplier_kind, ROUND(SUM(a.amount_usd), 2) AS total_usd FROM awards a JOIN suppliers s ON s.supplier_id = a.supplier_id GROUP BY s.supplier_kind ORDER BY total_usd DESC, s.supplier_kind
+  pair_id: p08
+  expect: answer
+  tags:
+  - pair
+  - grouping
+  notes: ''
+- id: q040
+  category: grouping_topk
+  difficulty: medium
+  lang: es
+  question: ¿Cuántos procesos hay por tipo de contratación?
+  gold_sql: SELECT procurement_type, COUNT(*) AS n FROM tenders GROUP BY procurement_type ORDER BY n DESC, procurement_type
+  pair_id: null
+  expect: answer
+  tags:
+  - grouping
+  notes: ''
+- id: q041
+  category: grouping_topk
+  difficulty: medium
+  lang: en
+  question: How many tenders are there per category?
+  gold_sql: SELECT category, COUNT(*) AS n FROM tenders WHERE category IS NOT NULL GROUP BY category ORDER BY n DESC, category
+  pair_id: null
+  expect: answer
+  tags:
+  - grouping
+  notes: ''
+- id: q042
+  category: grouping_topk
+  difficulty: hard
+  lang: es
+  question: ¿Cuáles son los 5 cantones con más procesos de contratación?
+  gold_sql: SELECT b.canton, COUNT(*) AS n FROM tenders t JOIN buyers b ON b.buyer_id = t.buyer_id WHERE b.canton IS NOT NULL GROUP BY b.canton ORDER BY n DESC, b.canton LIMIT 5
+  pair_id: null
+  expect: answer
+  tags:
+  - grouping
+  - ranking
+  notes: ''
+- id: q043
+  category: grouping_topk
+  difficulty: hard
+  lang: en
+  question: Which are the top 10 buyers by number of tenders published?
+  gold_sql: SELECT b.buyer_name, COUNT(*) AS n FROM tenders t JOIN buyers b ON b.buyer_id = t.buyer_id GROUP BY b.buyer_id, b.buyer_name ORDER BY n DESC, b.buyer_id LIMIT 10
+  pair_id: null
+  expect: answer
+  tags:
+  - grouping
+  - ranking
+  notes: ''
+- id: q044
+  category: grouping_topk
+  difficulty: hard
+  lang: es
+  question: ¿Cuáles son los 10 proveedores con más adjudicaciones?
+  gold_sql: SELECT s.supplier_name, COUNT(*) AS n FROM awards a JOIN suppliers s ON s.supplier_id = a.supplier_id GROUP BY s.supplier_id, s.supplier_name ORDER BY n DESC, s.supplier_id LIMIT 10
+  pair_id: null
+  expect: answer
+  tags:
+  - grouping
+  - ranking
+  notes: ''
+- id: q045
+  category: temporal
+  difficulty: easy
+  lang: en
+  question: How many tenders were published in November 2021?
+  gold_sql: SELECT COUNT(*) AS n FROM tenders WHERE release_date >= DATE '2021-11-01' AND release_date < DATE '2021-12-01'
+  pair_id: p09
+  expect: answer
+  tags:
+  - pair
+  - temporal
+  notes: ''
+- id: q046
+  category: temporal
+  difficulty: easy
+  lang: es
+  question: ¿Cuántos procesos se publicaron en noviembre de 2021?
+  gold_sql: SELECT COUNT(*) AS n FROM tenders WHERE release_date >= DATE '2021-11-01' AND release_date < DATE '2021-12-01'
+  pair_id: p09
+  expect: answer
+  tags:
+  - pair
+  - temporal
+  notes: ''
+- id: q047
+  category: temporal
+  difficulty: easy
+  lang: es
+  question: ¿Cuántos procesos se publicaron en enero de 2021?
+  gold_sql: SELECT COUNT(*) AS n FROM tenders WHERE release_date >= DATE '2021-01-01' AND release_date < DATE '2021-02-01'
+  pair_id: null
+  expect: answer
+  tags:
+  - temporal
+  notes: ''
+- id: q048
+  category: temporal
+  difficulty: medium
+  lang: en
+  question: Which month had the most tenders?
+  gold_sql: SELECT date_trunc('month', release_date) AS month, COUNT(*) AS n FROM tenders GROUP BY 1 ORDER BY n DESC, month LIMIT 1
+  pair_id: null
+  expect: answer
+  tags:
+  - temporal
+  - ranking
+  notes: ''
+- id: q049
+  category: temporal
+  difficulty: hard
+  lang: es
+  question: ¿Cuál fue el mes con mayor monto planificado acumulado?
+  gold_sql: SELECT date_trunc('month', release_date) AS month, ROUND(SUM(planned_amount_usd), 2) AS total_planned FROM tenders WHERE planned_amount_usd IS NOT NULL GROUP BY 1 ORDER BY total_planned DESC, month LIMIT 1
+  pair_id: null
+  expect: answer
+  tags:
+  - temporal
+  - ranking
+  notes: ''
+- id: q050
+  category: temporal
+  difficulty: hard
+  lang: en
+  question: How many competitive tenders were published per month?
+  gold_sql: SELECT date_trunc('month', release_date) AS month, COUNT(*) AS n FROM tenders WHERE is_competitive GROUP BY 1 ORDER BY month
+  pair_id: null
+  expect: answer
+  tags:
+  - temporal
+  notes: ''
+- id: q051
+  category: ratio_percentage
+  difficulty: easy
+  lang: en
+  question: What percentage of awards have an active status?
+  gold_sql: SELECT ROUND(100.0 * SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_active FROM awards
+  pair_id: p10
+  expect: answer
+  tags:
+  - pair
+  - ratio
+  notes: ''
+- id: q052
+  category: ratio_percentage
+  difficulty: easy
+  lang: es
+  question: ¿Qué porcentaje de adjudicaciones tienen estado activo?
+  gold_sql: SELECT ROUND(100.0 * SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_active FROM awards
+  pair_id: p10
+  expect: answer
+  tags:
+  - pair
+  - ratio
+  notes: ''
+- id: q053
+  category: ratio_percentage
+  difficulty: medium
+  lang: es
+  question: ¿Qué porcentaje de procesos son de tipo catálogo electrónico?
+  gold_sql: SELECT ROUND(100.0 * SUM(CASE WHEN procurement_type = 'catalogo_electronico' THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_catalogo FROM tenders
+  pair_id: null
+  expect: answer
+  tags:
+  - ratio
+  notes: ''
+- id: q054
+  category: ratio_percentage
+  difficulty: medium
+  lang: en
+  question: What percentage of contracts are terminated?
+  gold_sql: SELECT ROUND(100.0 * SUM(CASE WHEN status = 'terminated' THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_terminated FROM contracts
+  pair_id: null
+  expect: answer
+  tags:
+  - ratio
+  notes: ''
+- id: q055
+  category: ratio_percentage
+  difficulty: medium
+  lang: es
+  question: ¿Qué porcentaje del monto adjudicado corresponde a proveedores de tipo empresa?
+  gold_sql: SELECT ROUND(100.0 * SUM(CASE WHEN s.supplier_kind = 'company' THEN a.amount_usd ELSE 0 END) / SUM(a.amount_usd), 2) AS pct_company FROM awards a JOIN suppliers s ON s.supplier_id = a.supplier_id
+  pair_id: null
+  expect: answer
+  tags:
+  - ratio
+  - join
+  notes: ''
+- id: q056
+  category: subquery_cte_window
+  difficulty: hard
+  lang: en
+  question: What is the most awarded supplier in each supplier kind?
+  gold_sql: WITH totals AS (SELECT s.supplier_kind, s.supplier_id, s.supplier_name, SUM(a.amount_usd) AS total_usd FROM awards a JOIN suppliers s ON s.supplier_id = a.supplier_id GROUP BY s.supplier_kind, s.supplier_id, s.supplier_name), ranked AS (SELECT supplier_kind, supplier_name, total_usd, ROW_NUMBER() OVER (PARTITION BY supplier_kind ORDER BY total_usd DESC, supplier_name) AS rn FROM totals) SELECT supplier_kind, supplier_name, ROUND(total_usd, 2) AS total_usd FROM ranked WHERE rn = 1 ORDER BY supplier_kind
+  pair_id: p11
+  expect: answer
+  tags:
+  - pair
+  - window
+  - ranking
+  notes: ''
+- id: q057
+  category: subquery_cte_window
+  difficulty: hard
+  lang: es
+  question: ¿Cuál es el proveedor con mayor monto adjudicado en cada tipo de proveedor?
+  gold_sql: WITH totals AS (SELECT s.supplier_kind, s.supplier_id, s.supplier_name, SUM(a.amount_usd) AS total_usd FROM awards a JOIN suppliers s ON s.supplier_id = a.supplier_id GROUP BY s.supplier_kind, s.supplier_id, s.supplier_name), ranked AS (SELECT supplier_kind, supplier_name, total_usd, ROW_NUMBER() OVER (PARTITION BY supplier_kind ORDER BY total_usd DESC, supplier_name) AS rn FROM totals) SELECT supplier_kind, supplier_name, ROUND(total_usd, 2) AS total_usd FROM ranked WHERE rn = 1 ORDER BY supplier_kind
+  pair_id: p11
+  expect: answer
+  tags:
+  - pair
+  - window
+  - ranking
+  notes: ''
+- id: q058
+  category: subquery_cte_window
+  difficulty: medium
+  lang: en
+  question: Which 5 buyers have the highest average award amount per tender?
+  gold_sql: WITH per_buyer AS (SELECT b.buyer_id, b.buyer_name, SUM(a.amount_usd) AS total_usd, COUNT(DISTINCT t.tender_id) AS n_tenders FROM awards a JOIN tenders t ON t.tender_id = a.tender_id JOIN buyers b ON b.buyer_id = t.buyer_id GROUP BY b.buyer_id, b.buyer_name) SELECT buyer_name, ROUND(total_usd / n_tenders, 2) AS avg_award_per_tender FROM per_buyer ORDER BY avg_award_per_tender DESC, buyer_name LIMIT 5
+  pair_id: null
+  expect: answer
+  tags:
+  - window
+  - ranking
+  notes: ''
+- id: q059
+  category: subquery_cte_window
+  difficulty: hard
+  lang: es
+  question: ¿Cuál es el contrato de mayor monto por provincia de la entidad contratante?
+  gold_sql: WITH per_province AS (SELECT b.province, c.contract_id, c.amount_usd, ROW_NUMBER() OVER (PARTITION BY b.province ORDER BY c.amount_usd DESC, c.contract_id) AS rn FROM contracts c JOIN tenders t ON t.tender_id = c.tender_id JOIN buyers b ON b.buyer_id = t.buyer_id WHERE b.province IS NOT NULL AND c.amount_usd IS NOT NULL) SELECT province, contract_id, ROUND(amount_usd, 2) AS amount_usd FROM per_province WHERE rn = 1 ORDER BY province
+  pair_id: null
+  expect: answer
+  tags:
+  - window
+  - ranking
+  notes: ''
+- id: q060
+  category: subquery_cte_window
+  difficulty: medium
+  lang: en
+  question: How many tenders have more awards than the average number of awards per tender?
+  gold_sql: WITH counts AS (SELECT tender_id, COUNT(*) AS n FROM awards GROUP BY tender_id) SELECT COUNT(*) AS n FROM counts WHERE n > (SELECT AVG(n) FROM counts)
+  pair_id: null
+  expect: answer
+  tags:
+  - subquery
+  notes: ''

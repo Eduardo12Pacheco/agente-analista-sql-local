@@ -92,7 +92,13 @@ markers = [
   "e2e: end-to-end tests (excluded by default)",
   "slow: tests taking more than a few seconds",
 ]
-filterwarnings = ["error"]
+filterwarnings = [
+  "error",
+  # Starlette 1.x deprecates httpx in TestClient in favour of httpx2; D2 pins httpx 0.28.
+  "ignore:Using `httpx` with `starlette.testclient` is deprecated:starlette.exceptions.StarletteDeprecationWarning",
+  # pytest-base-url 2.1 still defines the session fixture on an instance; pytest 9 warns.
+  "ignore:Session-scoped fixtures defined as instance methods are deprecated:pytest.PytestRemovedIn10Warning",
+]
 
 [tool.coverage.run]
 source = ["sqlagent"]

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "local-sql-analyst-agent"
-version = "0.1.0.dev0"
+version = "0.1.0"
 description = "Local-first AI data analyst over a bundled DuckDB warehouse, with SQL guardrails and evaluation."
 readme = "README.md"
 license = { text = "MIT" }

@@ -91,6 +91,7 @@ def build_agent(  # noqa: PLR0913 - composition options are explicit
     semantic: SemanticLayer | None = None,
     sink: EventSink | None = None,
     narrate: bool = True,
+    retrieve: bool = True,
     fewshots: tuple[FewShot, ...] | None = None,
 ) -> AnalystAgent:
     """Compose the analyst state machine from ready or default adapters."""
@@ -113,5 +114,6 @@ def build_agent(  # noqa: PLR0913 - composition options are explicit
         settings,
         sink=sink,
         narrate=narrate,
+        retrieve=retrieve,
         fewshots=resolved_fewshots,
     )

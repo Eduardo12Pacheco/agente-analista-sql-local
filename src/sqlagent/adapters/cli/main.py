@@ -6,29 +6,50 @@ T4 adds the ``data`` command group (``info``, ``verify``, ``build``); the
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
 import typer
 
 from sqlagent import __version__
+from sqlagent.adapters.benchmark.yaml_repository import YamlBenchmarkRepository
 from sqlagent.adapters.cli.doctor import run_doctor
 from sqlagent.adapters.cli.render import answer_to_json, render_answer
+from sqlagent.adapters.llm.cassette import RecordingLLM
+from sqlagent.adapters.reporting.markdown import MarkdownHtmlReportWriter
 from sqlagent.adapters.warehouse.etl import (
     ATTRIBUTION,
     BUNDLE_DIR,
     LICENSE,
+    MANIFEST_NAME,
     TABLE_ORDER,
     build_warehouse,
     download_and_build,
     load_manifest,
     verify_bundle,
 )
+from sqlagent.application.evaluation.benchmark import Category
+from sqlagent.application.evaluation.runner import TrackingLLM
 from sqlagent.application.use_cases.ask import AskQuestion
-from sqlagent.bootstrap import build_agent
+from sqlagent.application.use_cases.evaluate import (
+    EvaluationRequest,
+    RunEvaluation,
+    model_slug,
+    verify_benchmark_lock,
+)
+from sqlagent.bootstrap import build_agent, build_llm, default_cassette_path
+from sqlagent.bootstrap import build_warehouse as build_runtime_warehouse
 from sqlagent.config import Settings
-from sqlagent.domain.errors import ConfigError, SqlAgentError, WarehouseUnavailable
+from sqlagent.domain.errors import (
+    CassetteMiss,
+    ConfigError,
+    LLMError,
+    SqlAgentError,
+    WarehouseUnavailable,
+)
 from sqlagent.domain.models import Language, Status
+from sqlagent.domain.sql_policy import SqlPolicy
 from sqlagent.logging import configure_logging
 
 _LLM_BACKENDS = {"ollama", "replay"}
@@ -134,6 +155,181 @@ def ask(  # noqa: PLR0913, PLR0917 - every D25 flag is part of the CLI contract
     else:
         render_answer(answer, trace=trace)
     raise typer.Exit(0 if answer.status is not Status.FAILED else 1)
+
+
+@app.command("eval")
+def eval_command(  # noqa: PLR0912, PLR0913, PLR0915, PLR0917 - D25 contract
+    llm: Annotated[
+        str,
+        typer.Option("--llm", help="LLM backend: ollama (live) or replay (recorded)."),
+    ] = "ollama",
+    model: Annotated[
+        str | None,
+        typer.Option("--model", help="Model name override (default from settings)."),
+    ] = None,
+    benchmark: Annotated[
+        str,
+        typer.Option("--benchmark", help="Benchmark version to evaluate."),
+    ] = "v1",
+    category: Annotated[
+        list[str] | None,
+        typer.Option("--category", help="Restrict to a D19 category (repeatable)."),
+    ] = None,
+    limit: Annotated[
+        int | None,
+        typer.Option("--limit", help="Evaluate only the first N selected items."),
+    ] = None,
+    record: Annotated[
+        bool,
+        typer.Option("--record", help="Record every model call to the bundled cassette."),
+    ] = False,
+    out: Annotated[
+        Path | None,
+        typer.Option("--out", help="Output directory for the four report artifacts."),
+    ] = None,
+    compare: Annotated[
+        Path | None,
+        typer.Option("--compare", help="Baseline summary.json for the regression gate."),
+    ] = None,
+    max_drop: Annotated[
+        float,
+        typer.Option("--max-drop", help="Allowed per-metric drop for --compare."),
+    ] = 0.0,
+    with_narration: Annotated[
+        bool,
+        typer.Option("--with-narration", help="Enable the NARRATE LLM call (eval default off)."),
+    ] = False,
+    max_repairs: Annotated[
+        int | None,
+        typer.Option("--max-repairs", help="Override the repair budget (ablations)."),
+    ] = None,
+    no_retrieval: Annotated[
+        bool,
+        typer.Option("--no-retrieval", help="Ablation: skip BM25 and send all tables."),
+    ] = False,
+) -> None:
+    """Run benchmark v1, write reports and optionally fail the regression gate."""
+
+    if llm not in _LLM_BACKENDS:
+        typer.echo(f"error: --llm must be one of {sorted(_LLM_BACKENDS)}", err=True)
+        raise typer.Exit(2)
+    if limit is not None and limit < 1:
+        typer.echo("error: --limit must be a positive integer", err=True)
+        raise typer.Exit(2)
+    if max_repairs is not None and max_repairs < 0:
+        typer.echo("error: --max-repairs must be >= 0", err=True)
+        raise typer.Exit(2)
+    if record and llm != "ollama":
+        typer.echo("error: --record requires --llm ollama", err=True)
+        raise typer.Exit(2)
+    try:
+        categories = tuple(Category(value) for value in (category or ()))
+    except ValueError as exc:
+        typer.echo(f"error: unknown --category: {exc}", err=True)
+        raise typer.Exit(2) from exc
+
+    settings = Settings()
+    updates: dict[str, object] = {"llm_backend": llm}
+    if model:
+        updates["model"] = model
+    if max_repairs is not None:
+        updates["max_repairs"] = max_repairs
+    settings = settings.model_copy(update=updates)
+    configure_logging(settings)
+    now = datetime.now(tz=UTC)
+    run_id = f"{now:%Y%m%dT%H%M%SZ}-{model_slug(settings.model)}"
+    out_dir = out if out is not None else Path("eval/reports") / run_id
+    warehouse = None
+    try:
+        repository = YamlBenchmarkRepository()
+        benchmark_model = repository.load(benchmark)
+        verify_benchmark_lock(
+            repository.benchmark_dir,
+            benchmark,
+            Path(BUNDLE_DIR) / MANIFEST_NAME,
+        )
+        base_llm = build_llm(settings)
+        active_llm = base_llm
+        if record:
+            active_llm = RecordingLLM(base_llm, default_cassette_path(settings.model))
+        tracker: TrackingLLM | None = None
+        if llm == "replay":
+            tracker = TrackingLLM(active_llm)
+            active_llm = tracker
+        warehouse = build_runtime_warehouse(settings)
+        agent = build_agent(
+            settings,
+            llm=active_llm,
+            warehouse=warehouse,
+            narrate=with_narration,
+            retrieve=not no_retrieval,
+        )
+        policy = SqlPolicy(
+            catalog_tables=warehouse.catalog().table_names(),
+            max_rows=settings.max_rows,
+        )
+        outcome = RunEvaluation(
+            benchmark=benchmark_model,
+            agent=agent,
+            llm=active_llm,
+            warehouse=warehouse,
+            policy=policy,
+            writer=MarkdownHtmlReportWriter(),
+            settings=settings,
+        ).execute(
+            EvaluationRequest(
+                categories=categories,
+                limit=limit,
+                with_narration=with_narration,
+                retrieval=not no_retrieval,
+                out_dir=out_dir,
+                run_id=run_id,
+                created_at=now.isoformat(timespec="seconds"),
+                compare=compare,
+                max_drop=max_drop,
+            )
+        )
+        if tracker is not None and tracker.last_error is not None:
+            raise tracker.last_error
+        overall = outcome.summary.metrics["overall"]
+        typer.echo(f"run id: {outcome.summary.run_id}")
+        typer.echo(f"items: {len(outcome.results)} (answerable {overall['n']})")
+        typer.echo(
+            f"EX: {overall['ex']:.4f} "
+            f"[{overall['ex_ci_low']:.4f}, {overall['ex_ci_high']:.4f}] "
+            f"| valid SQL {overall['valid_sql_rate']:.4f} "
+            f"| refusal acc {overall['refusal_acc']:.4f}"
+        )
+        typer.echo(f"report: {outcome.out_dir / 'report.html'}")
+        if outcome.gate is not None:
+            if not outcome.gate.ok:
+                for line in outcome.gate.render():
+                    typer.echo(line, err=True)
+                typer.echo(
+                    "eval gate failed: refresh the baseline only after reviewing the regression",
+                    err=True,
+                )
+                raise typer.Exit(1)
+            for line in outcome.gate.render():
+                typer.echo(line)
+    except CassetteMiss as exc:
+        typer.echo(f"error: stale cassette: {exc}", err=True)
+        raise typer.Exit(4) from exc
+    except ConfigError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    except WarehouseUnavailable as exc:
+        typer.echo(f"error: warehouse unavailable: {exc}", err=True)
+        raise typer.Exit(3) from exc
+    except LLMError as exc:
+        typer.echo(f"error: LLM backend: {exc}", err=True)
+        raise typer.Exit(3) from exc
+    except SqlAgentError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(3) from exc
+    finally:
+        if warehouse is not None:
+            warehouse.close()
 
 
 @app.command("doctor")

@@ -134,6 +134,7 @@ class AnalystAgent:
         sink: EventSink | None = None,
         sanitizer: DataSanitizer | None = None,
         narrate: bool = True,
+        retrieve: bool = True,
         fewshots: tuple[FewShot, ...] = (),
     ) -> None:
         self._llm = llm
@@ -145,6 +146,7 @@ class AnalystAgent:
         self._sink = sink or NullSink()
         self._sanitizer = sanitizer or DataSanitizer()
         self._narrate = narrate
+        self._retrieval_enabled = retrieve
         self._fewshots = tuple(fewshots)
         self._lookup = LookupValuesTool(warehouse, semantic, sanitizer=self._sanitizer)
         self._handlers = {
@@ -223,7 +225,16 @@ class AnalystAgent:
 
     def _retrieve(self, state: _RunState) -> Phase:
         self._emit(state, EventKind.PHASE, Phase.RETRIEVE)
-        state.retrieval = self._retriever.search(state.question)
+        if self._retrieval_enabled:
+            state.retrieval = self._retriever.search(state.question)
+        else:
+            # D13 `--no-retrieval` ablation: send every table and metric.
+            state.retrieval = RetrievalResult(
+                tables=tuple(table.name for table in self._semantic.tables),
+                metrics=self._semantic.metrics,
+                fewshots=(),
+                docs=(),
+            )
         self._emit(
             state,
             EventKind.RETRIEVAL,

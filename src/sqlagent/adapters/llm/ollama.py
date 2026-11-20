@@ -29,6 +29,7 @@ logger = structlog.get_logger(__name__)
 
 BACKOFF_SECONDS: tuple[float, ...] = (0.5, 1.5)
 MAX_ATTEMPTS = 3
+HTTP_OK = 200
 HTTP_NOT_FOUND = 404
 HTTP_BAD_REQUEST = 400
 LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
@@ -220,10 +221,31 @@ class OllamaLLM:
             ),
             latency_ms=latency_ms,
             model=model,
-            model_digest=self._digests.get(model),
+            model_digest=self._ensure_digest(model),
             backend="ollama",
             stage=request.stage,
         )
+
+    def _ensure_digest(self, model: str) -> str | None:
+        """Fetch the model digest from ``/api/tags`` once (D12); never fail a call."""
+
+        if model in self._digests:
+            return self._digests[model]
+        try:
+            response = self._client.get(f"{self.url}/api/tags", timeout=httpx.Timeout(3.0))
+            if response.status_code != HTTP_OK:
+                return None
+            payload = response.json()
+        except (httpx.HTTPError, ValueError):
+            return None
+        for entry in payload.get("models", []):
+            if not isinstance(entry, dict) or not entry.get("name"):
+                continue
+            name = str(entry["name"])
+            digest = entry.get("digest")
+            if digest:
+                self._digests[name] = str(digest)
+        return self._digests.get(model)
 
     def _missing_model_message(self, model: str, response: httpx.Response) -> str:
         detail = response.text[:200]

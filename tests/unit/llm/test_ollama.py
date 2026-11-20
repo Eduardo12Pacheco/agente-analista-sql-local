@@ -255,3 +255,38 @@ def test_parse_without_total_duration_falls_back_to_wall_clock() -> None:
         request_for()
     )
     assert response.latency_ms >= 0
+
+
+def test_model_digest_is_fetched_once_from_tags_and_cached() -> None:
+    tags_calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal tags_calls
+        if request.url.path == "/api/tags":
+            tags_calls += 1
+            return httpx.Response(
+                200, json={"models": [{"name": "qwen3:8b", "digest": "sha256:abc"}]}
+            )
+        return httpx.Response(200, json=CHAT_REPLY)
+
+    llm = OllamaLLM(Settings(), client=client_with(handler))
+
+    first = llm.complete(request_for())
+    second = llm.complete(request_for())
+
+    assert first.model_digest == "sha256:abc"
+    assert second.model_digest == "sha256:abc"
+    assert tags_calls == 1
+    assert llm.describe().digest == "sha256:abc"
+
+
+def test_digest_lookup_failure_does_not_fail_the_completion() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/api/tags":
+            raise httpx.ConnectError("tags down", request=request)
+        return httpx.Response(200, json=CHAT_REPLY)
+
+    response = OllamaLLM(Settings(), client=client_with(handler)).complete(request_for())
+
+    assert response.content == CHAT_REPLY["message"]["content"]
+    assert response.model_digest is None

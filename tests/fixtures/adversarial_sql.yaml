@@ -1,0 +1,110 @@
+# Adversarial SQL corpus for SqlPolicy (T3, S16/D14).
+# Every entry must be rejected with exactly the listed GuardrailCode.
+- sql: "SELECT 1; DROP TABLE tenders"
+  expected_code: MULTI_STATEMENT
+- sql: "SELECT * FROM tenders; DELETE FROM awards"
+  expected_code: MULTI_STATEMENT
+- sql: "SELECT * FROM tenders WHERE title = 'x'; DROP TABLE buyers"
+  expected_code: MULTI_STATEMENT
+- sql: "/* hidden */ ; DROP TABLE tenders"
+  expected_code: NOT_SELECT
+- sql: "sElEcT 1; dRoP tAbLe tenders"
+  expected_code: MULTI_STATEMENT
+- sql: "INSERT INTO tenders VALUES ('x')"
+  expected_code: NOT_SELECT
+- sql: "UPDATE tenders SET title = 'x'"
+  expected_code: NOT_SELECT
+- sql: "DELETE FROM tenders"
+  expected_code: NOT_SELECT
+- sql: "CREATE TABLE shadow AS SELECT * FROM tenders"
+  expected_code: NOT_SELECT
+- sql: "DROP TABLE tenders"
+  expected_code: NOT_SELECT
+- sql: "ALTER TABLE tenders ADD COLUMN evil INTEGER"
+  expected_code: NOT_SELECT
+- sql: "TRUNCATE TABLE tenders"
+  expected_code: NOT_SELECT
+- sql: "COPY tenders TO '/tmp/leak.csv' (FORMAT CSV)"
+  expected_code: NOT_SELECT
+- sql: "ATTACH '/tmp/evil.duckdb' AS evil"
+  expected_code: NOT_SELECT
+- sql: "DETACH evil"
+  expected_code: NOT_SELECT
+- sql: "INSTALL httpfs"
+  expected_code: NOT_SELECT
+- sql: "LOAD httpfs"
+  expected_code: NOT_SELECT
+- sql: "PRAGMA database_list"
+  expected_code: NOT_SELECT
+- sql: "SET enable_external_access = true"
+  expected_code: NOT_SELECT
+- sql: "USE evil"
+  expected_code: NOT_SELECT
+- sql: "EXPORT DATABASE '/tmp/leak'"
+  expected_code: PARSE_ERROR
+- sql: "CALL evil_function()"
+  expected_code: NOT_SELECT
+- sql: "EXPLAIN ANALYZE SELECT * FROM tenders"
+  expected_code: NOT_SELECT
+- sql: "PIVOT tenders ON category USING COUNT(*)"
+  expected_code: NOT_SELECT
+- sql: "SELECT * FROM read_csv('/etc/passwd')"
+  expected_code: TABLE_FUNCTION
+- sql: "SELECT * FROM read_parquet('/tmp/secret.parquet')"
+  expected_code: TABLE_FUNCTION
+- sql: "SELECT * FROM glob('*')"
+  expected_code: TABLE_FUNCTION
+- sql: "SELECT * FROM range(1000000000)"
+  expected_code: TABLE_FUNCTION
+- sql: "SELECT * FROM duckdb_tables()"
+  expected_code: TABLE_FUNCTION
+- sql: "SELECT * FROM tenders, UNNEST([1, 2]) AS u"
+  expected_code: FORBIDDEN_NODE
+- sql: "SELECT * FROM tenders CROSS JOIN read_csv('/etc/passwd')"
+  expected_code: TABLE_FUNCTION
+- sql: "SELECT * FROM tenders JOIN duckdb_tables() ON TRUE"
+  expected_code: TABLE_FUNCTION
+- sql: "SELECT read_csv('/etc/passwd')"
+  expected_code: FORBIDDEN_FUNCTION
+- sql: "SELECT current_date"
+  expected_code: FORBIDDEN_FUNCTION
+- sql: "SELECT random()"
+  expected_code: FORBIDDEN_FUNCTION
+- sql: "SELECT * FROM 'file.csv'"
+  expected_code: UNKNOWN_TABLE
+- sql: "SELECT * FROM information_schema.tables"
+  expected_code: UNKNOWN_TABLE
+- sql: "SELECT * FROM pg_catalog.pg_tables"
+  expected_code: UNKNOWN_TABLE
+- sql: "SELECT * FROM main.sqlite_master"
+  expected_code: UNKNOWN_TABLE
+- sql: "SELECT * FROM secret_table"
+  expected_code: UNKNOWN_TABLE
+- sql: "SELECT * FROM tenders WHERE tender_id IN (SELECT ocid FROM 'file.csv')"
+  expected_code: UNKNOWN_TABLE
+- sql: "SELECT * FROM tenders t CROSS JOIN pg_catalog.pg_tables p"
+  expected_code: UNKNOWN_TABLE
+- sql: "SELECT * FROM tеnders"
+  expected_code: UNKNOWN_TABLE
+- sql: "SELECT * INTO shadow FROM tenders"
+  expected_code: FORBIDDEN_NODE
+- sql: "WITH x AS (DELETE FROM tenders RETURNING *) SELECT * FROM x"
+  expected_code: FORBIDDEN_NODE
+- sql: "WITH x AS (CREATE TABLE shadow AS SELECT 1) SELECT * FROM x"
+  expected_code: FORBIDDEN_NODE
+- sql: "SELECT * FROM tenders t, LATERAL (SELECT 1) x"
+  expected_code: FORBIDDEN_NODE
+- sql: "SELECT * FROM tenders FOR UPDATE"
+  expected_code: FORBIDDEN_NODE
+- sql: "SELECT * FROM tenders USING SAMPLE 10%"
+  expected_code: FORBIDDEN_NODE
+- sql: "SELECT * FROM (SELECT * FROM (SELECT * FROM (SELECT * FROM (SELECT * FROM (SELECT * FROM (SELECT * FROM (SELECT * FROM tenders) a) b) c) d) e) f) g"
+  expected_code: TOO_COMPLEX
+- sql: ""
+  expected_code: EMPTY
+- sql: "   \n\t  "
+  expected_code: EMPTY
+- sql: "not sql at all"
+  expected_code: PARSE_ERROR
+- sql: "SELECT * FROM tenders WHERE ("
+  expected_code: PARSE_ERROR

@@ -25,9 +25,16 @@ from sqlagent.adapters.web.templating import TEMPLATES_DIR, templates
 from sqlagent.application.agent.machine import AnalystAgent
 from sqlagent.application.ports import LLMPort, WarehousePort
 from sqlagent.application.use_cases.ask import AskQuestion
-from sqlagent.bootstrap import build_agent, build_llm, build_semantic, build_warehouse
+from sqlagent.bootstrap import (
+    build_agent,
+    build_llm,
+    build_runtime,
+    build_semantic,
+    build_warehouse,
+)
 from sqlagent.config import Settings
 from sqlagent.domain.errors import ConfigError
+from sqlagent.domain.retrieval import FewShot
 from sqlagent.domain.semantic import SemanticLayer
 
 logger = structlog.get_logger(__name__)
@@ -142,14 +149,22 @@ def create_app(
         resolved_llm = llm or build_llm(resolved_settings)
         resolved_agent = agent
     else:
-        resolved_warehouse = warehouse or build_warehouse(resolved_settings)
-        resolved_semantic = semantic or build_semantic()
+        resolved_fewshots: tuple[FewShot, ...] | None = None
+        if warehouse is None and semantic is None:
+            runtime = build_runtime(resolved_settings)
+            resolved_warehouse = runtime.warehouse
+            resolved_semantic = runtime.semantic
+            resolved_fewshots = runtime.fewshots
+        else:
+            resolved_warehouse = warehouse or build_warehouse(resolved_settings)
+            resolved_semantic = semantic or build_semantic()
         resolved_llm = llm or build_llm(resolved_settings)
         resolved_agent = build_agent(
             resolved_settings,
             llm=resolved_llm,
             warehouse=resolved_warehouse,
             semantic=resolved_semantic,
+            fewshots=resolved_fewshots,
         )
 
     state = WebState(

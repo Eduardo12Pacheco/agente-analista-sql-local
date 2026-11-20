@@ -7,14 +7,17 @@ constructing ``ScriptedLLM`` directly (D17).
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 from sqlagent.adapters.llm.cassette import ReplayLLM
 from sqlagent.adapters.llm.ollama import OllamaLLM
 from sqlagent.adapters.semantic.fewshots_repository import load_fewshots
+from sqlagent.adapters.semantic.manifest_repository import ManifestSemanticLayerRepository
 from sqlagent.adapters.semantic.yaml_repository import YamlSemanticLayerRepository
 from sqlagent.adapters.warehouse.duckdb_warehouse import DuckDbWarehouse
 from sqlagent.adapters.warehouse.etl import BUNDLE_DIR, MANIFEST_NAME
+from sqlagent.adapters.warehouse.lakehouse import LakehouseManifest, open_lakehouse
 from sqlagent.adapters.warehouse.materialize import ensure_warehouse
 from sqlagent.application.agent.events import EventSink
 from sqlagent.application.agent.machine import AnalystAgent
@@ -67,14 +70,62 @@ def build_warehouse(
     """Materialise the bundle on first use and return a locked read-only warehouse."""
 
     path = ensure_warehouse(settings, bundle_dir=bundle_dir)
-    limits = WarehouseLimits(
+    return DuckDbWarehouse(
+        path,
+        warehouse_limits(settings),
+        manifest_path=Path(bundle_dir) / MANIFEST_NAME,
+    )
+
+
+def warehouse_limits(settings: Settings) -> WarehouseLimits:
+    """Map settings onto the warehouse limits shared by both adapters (D15)."""
+
+    return WarehouseLimits(
         max_rows=settings.max_rows,
         ui_rows=settings.ui_rows,
         query_timeout_s=settings.query_timeout_s,
         memory_limit=settings.memory_limit,
         threads=settings.threads,
     )
-    return DuckDbWarehouse(path, limits, manifest_path=Path(bundle_dir) / MANIFEST_NAME)
+
+
+@dataclass(frozen=True, slots=True)
+class Runtime:
+    """Ports and resources selected for one settings snapshot (T11)."""
+
+    warehouse: WarehousePort
+    semantic: SemanticLayer
+    fewshots: tuple[FewShot, ...]
+    lakehouse: LakehouseManifest | None = None
+
+    @property
+    def external(self) -> bool:
+        return self.lakehouse is not None
+
+
+def build_runtime(settings: Settings) -> Runtime:
+    """Build the runtime for the bundled warehouse or an external lakehouse (S31).
+
+    An external manifest replaces the Parquet bundle, the bundled semantic layer
+    and the few-shot examples; metrics and glossary stay empty because the
+    manifest contract does not carry them (D28).
+    """
+
+    if settings.lakehouse_manifest is not None:
+        manifest_path = Path(settings.lakehouse_manifest)
+        warehouse = open_lakehouse(manifest_path, warehouse_limits(settings))
+        semantic = ManifestSemanticLayerRepository(warehouse.manifest).load()
+        return Runtime(
+            warehouse=warehouse,
+            semantic=semantic,
+            fewshots=(),
+            lakehouse=warehouse.manifest,
+        )
+    return Runtime(
+        warehouse=build_warehouse(settings),
+        semantic=build_semantic(),
+        fewshots=load_fewshots(),
+    )
 
 
 def build_semantic() -> SemanticLayer:
@@ -96,10 +147,28 @@ def build_agent(  # noqa: PLR0913 - composition options are explicit
 ) -> AnalystAgent:
     """Compose the analyst state machine from ready or default adapters."""
 
-    resolved_semantic = semantic if semantic is not None else build_semantic()
-    resolved_warehouse = warehouse if warehouse is not None else build_warehouse(settings)
+    runtime: Runtime | None = None
+    resolved_warehouse = warehouse
+    resolved_semantic = semantic
+    if settings.lakehouse_manifest is not None and (
+        resolved_warehouse is None or resolved_semantic is None
+    ):
+        runtime = build_runtime(settings)
+        if resolved_warehouse is None:
+            resolved_warehouse = runtime.warehouse
+        if resolved_semantic is None:
+            resolved_semantic = runtime.semantic
+    if resolved_warehouse is None:
+        resolved_warehouse = build_warehouse(settings)
+    if resolved_semantic is None:
+        resolved_semantic = build_semantic()
     resolved_llm = llm if llm is not None else build_llm(settings)
-    resolved_fewshots = load_fewshots() if fewshots is None else fewshots
+    if fewshots is not None:
+        resolved_fewshots = fewshots
+    elif runtime is not None:
+        resolved_fewshots = runtime.fewshots
+    else:
+        resolved_fewshots = load_fewshots()
     retriever = Bm25Retriever(resolved_semantic, resolved_fewshots)
     policy = SqlPolicy(
         catalog_tables=resolved_warehouse.catalog().table_names(),

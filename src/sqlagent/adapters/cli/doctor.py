@@ -16,9 +16,10 @@ from pathlib import Path
 
 from sqlagent.adapters.llm.ollama import OllamaLLM
 from sqlagent.adapters.warehouse.etl import BUNDLE_DIR, verify_bundle
-from sqlagent.bootstrap import build_warehouse, default_cassette_path
+from sqlagent.adapters.warehouse.lakehouse import LakehouseWarehouse, load_manifest
+from sqlagent.bootstrap import build_warehouse, default_cassette_path, warehouse_limits
 from sqlagent.config import Settings
-from sqlagent.domain.errors import SqlAgentError
+from sqlagent.domain.errors import ConfigError, SqlAgentError
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,12 +71,50 @@ def _gpu_check() -> Check:
     return Check("GPU", True, output[0])
 
 
-def _warehouse_checks(settings: Settings) -> tuple[Check, Path | None, bool]:
+def _lakehouse_checks(
+    settings: Settings, manifest_path: Path
+) -> tuple[tuple[Check, ...], Path | None, bool]:
+    try:
+        manifest = load_manifest(manifest_path)
+    except ConfigError as exc:
+        return (Check("manifest", False, f"invalid: {exc}"),), None, False
+    checks = [
+        Check(
+            "manifest",
+            True,
+            f"valid {manifest.name} ({len(manifest.tables)} tables) at {manifest_path}",
+        )
+    ]
+    try:
+        warehouse = LakehouseWarehouse(manifest, manifest_path, warehouse_limits(settings))
+        try:
+            info = warehouse.info()
+        finally:
+            warehouse.close()
+    except (SqlAgentError, OSError) as exc:
+        checks.append(Check("warehouse", False, f"broken: {exc}"))
+        return tuple(checks), None, False
+    checks.append(
+        Check(
+            "warehouse",
+            True,
+            f"OK external ({len(info.tables)} tables, {sum(info.tables.values()):,} rows) "
+            f"at {info.path}",
+        )
+    )
+    return tuple(checks), info.path, True
+
+
+def _warehouse_checks(
+    settings: Settings,
+) -> tuple[tuple[Check, ...], Path | None, bool]:
+    if settings.lakehouse_manifest is not None:
+        return _lakehouse_checks(settings, Path(settings.lakehouse_manifest))
     try:
         report = verify_bundle(BUNDLE_DIR)
         if not report.ok:
             detail = "; ".join(report.errors[:3]) or "bundle verification failed"
-            return (Check("warehouse", False, f"verification failed: {detail}"), None, False)
+            return (Check("warehouse", False, f"verification failed: {detail}"),), None, False
         warehouse = build_warehouse(settings)
         try:
             info = warehouse.info()
@@ -84,9 +123,9 @@ def _warehouse_checks(settings: Settings) -> tuple[Check, Path | None, bool]:
         finally:
             warehouse.close()
     except (SqlAgentError, OSError) as exc:
-        return (Check("warehouse", False, f"broken: {exc}"), None, False)
+        return (Check("warehouse", False, f"broken: {exc}"),), None, False
     detail = f"OK ({tables} tables, {rows:,} rows) at {info.path}"
-    return (Check("warehouse", True, detail), info.path, True)
+    return (Check("warehouse", True, detail),), info.path, True
 
 
 def run_doctor(settings: Settings | None = None, *, offline: bool = False) -> DoctorReport:
@@ -100,8 +139,8 @@ def run_doctor(settings: Settings | None = None, *, offline: bool = False) -> Do
             f"Python {platform.python_version()} on {platform.platform()}",
         )
     ]
-    warehouse_check, warehouse_path, warehouse_ok = _warehouse_checks(settings)
-    checks.append(warehouse_check)
+    warehouse_checks, warehouse_path, warehouse_ok = _warehouse_checks(settings)
+    checks.extend(warehouse_checks)
 
     cassette = default_cassette_path(settings.model)
     demo_available = cassette.is_file()

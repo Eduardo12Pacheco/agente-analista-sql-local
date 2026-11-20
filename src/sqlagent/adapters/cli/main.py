@@ -413,10 +413,16 @@ def doctor(
             help="Skip all network probes; report warehouse and demo availability only.",
         ),
     ] = False,
+    manifest: Annotated[
+        Path | None,
+        typer.Option("--manifest", help="Validate and inspect an external lakehouse manifest."),
+    ] = None,
 ) -> None:
     """Check Python, warehouse, Ollama, model presence and GPU; suggest next steps."""
 
     settings = Settings()
+    if manifest is not None:
+        settings = settings.model_copy(update={"lakehouse_manifest": manifest})
     configure_logging(settings)
     report = run_doctor(settings, offline=offline)
     typer.echo("sqlagent doctor")

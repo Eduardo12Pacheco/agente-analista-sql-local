@@ -1,0 +1,91 @@
+{
+  "schema": "sqlagent.lakehouse-manifest/v1",
+  "name": "example-lakehouse",
+  "generated_at": "2026-11-20T12:00:00Z",
+  "duckdb_file": "example.duckdb",
+  "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "tables": [
+    {
+      "name": "countries",
+      "description": "Countries with their region and income group.",
+      "columns": [
+        {
+          "name": "country_code",
+          "type": "VARCHAR",
+          "description": "ISO 3166-1 alpha-3 country code.",
+          "synonyms": [
+            "pais",
+            "codigo de pais"
+          ],
+          "lookupable": true,
+          "samples": [
+            "ECU",
+            "PER",
+            "COL"
+          ]
+        },
+        {
+          "name": "country_name",
+          "type": "VARCHAR",
+          "description": "Country display name.",
+          "synonyms": [
+            "pais",
+            "nombre"
+          ],
+          "lookupable": true
+        },
+        {
+          "name": "region",
+          "type": "VARCHAR",
+          "description": "World Bank region.",
+          "synonyms": [
+            "region"
+          ],
+          "lookupable": true,
+          "samples": [
+            "Latin America & Caribbean"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "gdp",
+      "description": "Annual GDP per country in current US dollars.",
+      "columns": [
+        {
+          "name": "country_code",
+          "type": "VARCHAR",
+          "description": "Country code joining countries.country_code.",
+          "synonyms": [
+            "pais"
+          ]
+        },
+        {
+          "name": "year",
+          "type": "INTEGER",
+          "description": "Calendar year.",
+          "synonyms": [
+            "anio"
+          ],
+          "lookupable": false
+        },
+        {
+          "name": "gdp_usd",
+          "type": "DOUBLE",
+          "description": "GDP in current US dollars.",
+          "synonyms": [
+            "pib",
+            "gdp"
+          ]
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "from": "gdp.country_code",
+      "to": "countries.country_code"
+    }
+  ],
+  "language": "en"
+}

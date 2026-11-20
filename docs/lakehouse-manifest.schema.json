@@ -1,0 +1,160 @@
+{
+  "$defs": {
+    "ManifestColumn": {
+      "additionalProperties": false,
+      "description": "One documented column of an external lakehouse table (D28).",
+      "properties": {
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "lookupable": {
+          "default": false,
+          "title": "Lookupable",
+          "type": "boolean"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "samples": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Samples",
+          "type": "array"
+        },
+        "synonyms": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Synonyms",
+          "type": "array"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "description"
+      ],
+      "title": "ManifestColumn",
+      "type": "object"
+    },
+    "ManifestRelationship": {
+      "additionalProperties": false,
+      "description": "A documented join path between two external columns (D28).",
+      "properties": {
+        "from": {
+          "title": "From",
+          "type": "string"
+        },
+        "to": {
+          "title": "To",
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "to"
+      ],
+      "title": "ManifestRelationship",
+      "type": "object"
+    },
+    "ManifestTable": {
+      "additionalProperties": false,
+      "description": "One documented table of an external lakehouse (D28).",
+      "properties": {
+        "columns": {
+          "items": {
+            "$ref": "#/$defs/ManifestColumn"
+          },
+          "title": "Columns",
+          "type": "array"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "columns"
+      ],
+      "title": "ManifestTable",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The ``sqlagent.lakehouse-manifest/v1`` contract (D28).",
+  "properties": {
+    "duckdb_file": {
+      "format": "path",
+      "title": "Duckdb File",
+      "type": "string"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "language": {
+      "default": "multi",
+      "enum": [
+        "es",
+        "en",
+        "multi"
+      ],
+      "title": "Language",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "relationships": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ManifestRelationship"
+      },
+      "title": "Relationships",
+      "type": "array"
+    },
+    "schema": {
+      "const": "sqlagent.lakehouse-manifest/v1",
+      "title": "Schema",
+      "type": "string"
+    },
+    "sha256": {
+      "title": "Sha256",
+      "type": "string"
+    },
+    "tables": {
+      "items": {
+        "$ref": "#/$defs/ManifestTable"
+      },
+      "title": "Tables",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema",
+    "name",
+    "generated_at",
+    "duckdb_file",
+    "sha256",
+    "tables"
+  ],
+  "title": "LakehouseManifest",
+  "type": "object"
+}

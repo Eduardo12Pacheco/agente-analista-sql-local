@@ -1,0 +1,421 @@
+schema: sqlagent.semantic-layer/v1
+
+# Bilingual documentation of the bundled SERCOP 2021 warehouse (S6/D13).
+# English identifiers describe Spanish data values.  `lookupable` marks the
+# only columns the agent may resolve colloquial entity names against (S8).
+
+tables:
+  - name: buyers
+    description_en: Public contracting entities (buyers) registered in SERCOP, one row per entity.
+    description_es: Entidades contratantes públicas (compradores) registradas en el SERCOP, una fila por entidad.
+    synonyms: [buyers, compradores, entidades contratantes, instituciones públicas, contracting entities]
+    columns:
+      - name: buyer_id
+        type: VARCHAR
+        description_en: 13-digit RUC of the contracting entity (primary key).
+        description_es: RUC de 13 dígitos de la entidad contratante (clave primaria).
+        synonyms: [ruc, identificador del comprador, buyer identifier, tax id]
+      - name: buyer_name
+        type: VARCHAR
+        description_en: Official name of the contracting entity, for example a ministry, municipality or public hospital.
+        description_es: Nombre oficial de la entidad contratante, por ejemplo un ministerio, municipio u hospital público.
+        synonyms: [entidad contratante, institución, comprador, buyer name, contracting entity, organismo]
+        lookupable: true
+        samples: [INSTITUTO ECUATORIANO DE SEGURIDAD SOCIAL, GOBIERNO DE GUAYAS, MUNICIPIO DE CUENCA]
+      - name: province
+        type: VARCHAR
+        description_en: Province of the contracting entity (Spanish uppercase name, NULL when unknown).
+        description_es: Provincia de la entidad contratante (nombre en mayúsculas, NULL si se desconoce).
+        synonyms: [provincia, región, region, state]
+        lookupable: true
+        samples: [PICHINCHA, GUAYAS, MANABI, AZUAY, LOJA]
+      - name: canton
+        type: VARCHAR
+        description_en: Canton (municipality) of the contracting entity, NULL when unknown.
+        description_es: Cantón (municipio) de la entidad contratante, NULL si se desconoce.
+        synonyms: [cantón, municipio, ciudad, city, municipality]
+        lookupable: true
+        samples: [QUITO, GUAYAQUIL, CUENCA, AMBATO, LOJA]
+
+  - name: suppliers
+    description_en: Suppliers and contractors awarded at least one tender in 2021; natural persons are pseudonymised.
+    description_es: Proveedores y contratistas adjudicados en al menos un proceso de 2021; las personas naturales están seudonimizadas.
+    synonyms: [suppliers, proveedores, contratistas, adjudicatarios, vendors, contractors]
+    columns:
+      - name: supplier_id
+        type: VARCHAR
+        description_en: Supplier key, a 13-digit RUC for companies/public entities or 'PN-000001'-style for pseudonymised natural persons.
+        description_es: Clave del proveedor, RUC de 13 dígitos para empresas/entidades públicas o del tipo 'PN-000001' para personas naturales seudonimizadas.
+        synonyms: [ruc del proveedor, identificador, supplier identifier, clave]
+      - name: supplier_name
+        type: VARCHAR
+        description_en: Supplier name; natural persons appear only as 'Persona natural PN-xxxxxx'.
+        description_es: Nombre del proveedor; las personas naturales aparecen solo como 'Persona natural PN-xxxxxx'.
+        synonyms: [proveedor, contratista, adjudicatario, supplier name, company]
+        lookupable: true
+        samples: [Persona natural PN-000001]
+      - name: supplier_kind
+        type: VARCHAR
+        description_en: Supplier kind derived from the RUC third digit (company, natural_person, public_entity, other).
+        description_es: Tipo de proveedor derivado del tercer dígito del RUC (company, natural_person, public_entity, other).
+        synonyms: [tipo de proveedor, naturaleza jurídica, persona natural, persona jurídica, supplier type]
+        samples: [natural_person, company, public_entity, other]
+      - name: province
+        type: VARCHAR
+        description_en: Province of the supplier (NULL when unknown).
+        description_es: Provincia del proveedor (NULL si se desconoce).
+        synonyms: [provincia, región, region]
+        lookupable: true
+        samples: [PICHINCHA, GUAYAS, AZUAY, MANABI, TUNGURAHUA]
+      - name: canton
+        type: VARCHAR
+        description_en: Canton (municipality) of the supplier (NULL when unknown).
+        description_es: Cantón (municipio) del proveedor (NULL si se desconoce).
+        synonyms: [cantón, municipio, ciudad, city]
+        samples: [QUITO, GUAYAQUIL, CUENCA]
+
+  - name: tenders
+    description_en: Contracting processes (tenders) published in 2021, one row per retained OCDS release.
+    description_es: Procesos de contratación (licitaciones) publicados en 2021, una fila por release OCDS retenido.
+    synonyms: [tenders, procesos, procesos de contratación, licitaciones, compras públicas, procurement processes]
+    columns:
+      - name: tender_id
+        type: VARCHAR
+        description_en: OCDS process identifier (ocid), primary key.
+        description_es: Identificador OCDS del proceso (ocid), clave primaria.
+        synonyms: [ocid, identificador del proceso, process id, código]
+      - name: process_code
+        type: VARCHAR
+        description_en: SERCOP process code, for example CE-20210001983662.
+        description_es: Código del proceso SERCOP, por ejemplo CE-20210001983662.
+        synonyms: [código del proceso, process code, código SERCOP, expediente]
+      - name: release_date
+        type: DATE
+        description_en: Date the process was published; use this column for time analysis.
+        description_es: Fecha de publicación del proceso; use esta columna para análisis temporal.
+        synonyms: [fecha de publicación, fecha, release date, publication date, año, month]
+      - name: buyer_id
+        type: VARCHAR
+        description_en: Foreign key to buyers.buyer_id, the RUC of the contracting entity.
+        description_es: Clave foránea a buyers.buyer_id, el RUC de la entidad contratante.
+        synonyms: [ruc del comprador, entidad, buyer, comprador]
+      - name: title
+        type: VARCHAR
+        description_en: Short title of the contracting process.
+        description_es: Título corto del proceso de contratación.
+        synonyms: [título, objeto, title, subject]
+      - name: description
+        type: VARCHAR
+        description_en: Free-text description of the process, truncated to 240 characters and whitespace-normalised.
+        description_es: Descripción de texto libre del proceso, truncada a 240 caracteres y con espacios normalizados.
+        synonyms: [descripción, detalle, description, objeto de contratación]
+      - name: procurement_method
+        type: VARCHAR
+        description_en: OCDS procurement method (open, selective, direct, limited); NULL when the source omits it.
+        description_es: Método de contratación OCDS (open, selective, direct, limited); NULL cuando la fuente lo omite.
+        synonyms: [método de contratación, procedimiento, procurement method, método]
+        samples: [selective, direct, open, limited]
+      - name: procurement_type
+        type: VARCHAR
+        description_en: Normalised procurement modality (catalogo_electronico, subasta_inversa, menor_cuantia, cotizacion, contratacion_directa, entre_entidades_publicas, otros).
+        description_es: Modalidad de contratación normalizada (catalogo_electronico, subasta_inversa, menor_cuantia, cotizacion, contratacion_directa, entre_entidades_publicas, otros).
+        synonyms: [tipo de contratación, modalidad, tipo de compra, procurement type, modality, régimen, catálogo electrónico, electronic catalogue]
+        lookupable: true
+        samples: [catalogo_electronico, subasta_inversa, contratacion_directa, menor_cuantia, cotizacion, otros]
+      - name: method_details
+        type: VARCHAR
+        description_en: Original Spanish procurement-method text from SERCOP.
+        description_es: Texto original en español del método de contratación del SERCOP.
+        synonyms: [detalle de la modalidad, method details, justificación]
+      - name: category
+        type: VARCHAR
+        description_en: Procurement category (goods, services, works); NULL when the source omits it.
+        description_es: Categoría de contratación (goods, services, works); NULL cuando la fuente lo omite.
+        synonyms: [categoría, bienes, servicios, obras, goods, services, works]
+        samples: [goods, services, works]
+      - name: status
+        type: VARCHAR
+        description_en: Tender status in the dataset (complete or active).
+        description_es: Estado del proceso en el conjunto de datos (complete o active).
+        synonyms: [estado, status, situación]
+        samples: [complete, active]
+      - name: planned_amount_usd
+        type: DOUBLE
+        description_en: Planned/reference amount in USD; NULL for all Subasta Inversa processes because SERCOP withholds it.
+        description_es: Monto planificado/referencial en USD; NULL para todos los procesos de Subasta Inversa porque el SERCOP no lo publica.
+        synonyms: [presupuesto referencial, monto planificado, planned amount, reference budget, valor estimado]
+      - name: number_of_tenderers
+        type: INTEGER
+        description_en: Number of bidders/offers recorded for the process.
+        description_es: Número de oferentes/ofertas registradas para el proceso.
+        synonyms: [oferentes, número de participantes, tenderers, bidders]
+      - name: is_competitive
+        type: BOOLEAN
+        description_en: Whether the process was flagged as competitive by SERCOP.
+        description_es: Indica si el proceso fue marcado como competitivo por el SERCOP.
+        synonyms: [competitivo, competencia, competitive, competition]
+
+  - name: awards
+    description_en: Awards of the retained tenders, one row per awarded supplier.
+    description_es: Adjudicaciones de los procesos retenidos, una fila por proveedor adjudicado.
+    synonyms: [awards, adjudicaciones, contratos adjudicados, awards, winner]
+    columns:
+      - name: tender_id
+        type: VARCHAR
+        description_en: Foreign key to tenders.tender_id (part of the primary key).
+        description_es: Clave foránea a tenders.tender_id (parte de la clave primaria).
+        synonyms: [proceso, licitación, tender, process]
+      - name: award_id
+        type: VARCHAR
+        description_en: OCDS award identifier (part of the primary key).
+        description_es: Identificador OCDS de la adjudicación (parte de la clave primaria).
+        synonyms: [adjudicación, award id, identificador de adjudicación]
+      - name: supplier_id
+        type: VARCHAR
+        description_en: Foreign key to suppliers.supplier_id (the winning supplier).
+        description_es: Clave foránea a suppliers.supplier_id (el proveedor adjudicado).
+        synonyms: [proveedor, contratista, supplier, ganador]
+      - name: amount_usd
+        type: DOUBLE
+        description_en: Awarded amount in USD; the authoritative spend measure.
+        description_es: Monto adjudicado en USD; la medida de gasto autoritativa.
+        synonyms: [monto adjudicado, valor adjudicado, importe, awarded amount, spend, valor]
+      - name: status
+        type: VARCHAR
+        description_en: Award status (NULL for most rows in the source).
+        description_es: Estado de la adjudicación (NULL para la mayoría de filas de la fuente).
+        synonyms: [estado, status, situación]
+        samples: [active]
+
+  - name: contracts
+    description_en: Contracts linked to the retained tenders, deduplicated on the projected columns (no primary key).
+    description_es: Contratos vinculados a los procesos retenidos, deduplicados sobre las columnas proyectadas (sin clave primaria).
+    synonyms: [contracts, contratos, contratos firmados, agreements]
+    columns:
+      - name: contract_id
+        type: VARCHAR
+        description_en: OCDS contract identifier (not unique in the source).
+        description_es: Identificador OCDS del contrato (no es único en la fuente).
+        synonyms: [contrato, contract id, identificador de contrato]
+      - name: tender_id
+        type: VARCHAR
+        description_en: Foreign key to tenders.tender_id.
+        description_es: Clave foránea a tenders.tender_id.
+        synonyms: [proceso, licitación, tender, process]
+      - name: award_id
+        type: VARCHAR
+        description_en: Identifier of the award the contract comes from.
+        description_es: Identificador de la adjudicación de la que proviene el contrato.
+        synonyms: [adjudicación, award, award id]
+      - name: status
+        type: VARCHAR
+        description_en: Contract status (active or terminated).
+        description_es: Estado del contrato (active o terminated).
+        synonyms: [estado, status, situación, vigente]
+        samples: [terminated, active]
+      - name: amount_usd
+        type: DOUBLE
+        description_en: Contracted amount in USD; NULL for catalogue purchases without a contract value.
+        description_es: Monto contratado en USD; NULL para compras de catálogo sin valor de contrato.
+        synonyms: [monto contratado, valor del contrato, importe, contracted amount]
+      - name: signed_date
+        type: DATE
+        description_en: Contract signature date; NULL for ~90% of rows in the source.
+        description_es: Fecha de firma del contrato; NULL para ~90% de las filas de la fuente.
+        synonyms: [fecha de firma, fecha de suscripción, signed date]
+      - name: duration_days
+        type: INTEGER
+        description_en: Contract duration in days; mostly NULL in the source.
+        description_es: Duración del contrato en días; mayormente NULL en la fuente.
+        synonyms: [duración, plazo, duration, días]
+
+  - name: tender_items
+    description_en: Line items of the retained tenders, including quantity, unit price and CPC classification.
+    description_es: Ítems de los procesos retenidos, incluyendo cantidad, precio unitario y clasificación CPC.
+    synonyms: [items, ítems, renglones, productos, bienes adquiridos, line items]
+    columns:
+      - name: item_id
+        type: VARCHAR
+        description_en: OCDS item identifier (primary key).
+        description_es: Identificador OCDS del ítem (clave primaria).
+        synonyms: [ítem, item id, renglón, identificador del ítem]
+      - name: tender_id
+        type: VARCHAR
+        description_en: Foreign key to tenders.tender_id.
+        description_es: Clave foránea a tenders.tender_id.
+        synonyms: [proceso, licitación, tender, process]
+      - name: description
+        type: VARCHAR
+        description_en: Free-text item description, truncated to 160 characters.
+        description_es: Descripción de texto libre del ítem, truncada a 160 caracteres.
+        synonyms: [descripción, producto, detalle, item description, artículo]
+      - name: quantity
+        type: DOUBLE
+        description_en: Quantity requested or acquired.
+        description_es: Cantidad solicitada o adquirida.
+        synonyms: [cantidad, quantity, unidades]
+      - name: unit_name
+        type: VARCHAR
+        description_en: Unit of measure (Unidad, Metro, Kilogramo, ...).
+        description_es: Unidad de medida (Unidad, Metro, Kilogramo, ...).
+        synonyms: [unidad de medida, unidad, unit, medida]
+        samples: [Unidad, Metro, Kilogramo, Global, Litro]
+      - name: unit_price_usd
+        type: DOUBLE
+        description_en: Unit price in USD.
+        description_es: Precio unitario en USD.
+        synonyms: [precio unitario, precio, unit price, valor unitario]
+      - name: cpc_code
+        type: VARCHAR
+        description_en: CPC (Common Procurement Vocabulary) classification code.
+        description_es: Código de clasificación CPC (Common Procurement Vocabulary).
+        synonyms: [código cpc, clasificación, cpc, classification code]
+      - name: cpc_description
+        type: VARCHAR
+        description_en: Human-readable CPC classification description.
+        description_es: Descripción legible de la clasificación CPC.
+        synonyms: [clasificación cpc, categoría del producto, cpc description, rubro]
+        lookupable: true
+        samples: [Lápices, Papel, Servicios de limpieza]
+
+metrics:
+  - name: total_awarded_usd
+    expression_sql: SUM(awards.amount_usd)
+    description_en: Total awarded amount in USD across all awards.
+    description_es: Monto total adjudicado en USD en todas las adjudicaciones.
+    synonyms: [monto total adjudicado, gasto total, total awarded, total spend, importe adjudicado]
+    tables: [awards]
+  - name: tender_count
+    expression_sql: COUNT(*)
+    description_en: Number of contracting processes (tenders).
+    description_es: Número de procesos de contratación (licitaciones).
+    synonyms: [número de procesos, cantidad de licitaciones, tender count, how many tenders]
+    tables: [tenders]
+  - name: avg_award_usd
+    expression_sql: AVG(awards.amount_usd)
+    description_en: Average awarded amount in USD per award.
+    description_es: Monto adjudicado promedio en USD por adjudicación.
+    synonyms: [monto promedio adjudicado, average award, promedio de adjudicación]
+    tables: [awards]
+  - name: competitive_share
+    expression_sql: AVG(CASE WHEN tenders.is_competitive THEN 1.0 ELSE 0.0 END)
+    description_en: Share of tenders flagged as competitive (0 to 1).
+    description_es: Proporción de procesos marcados como competitivos (0 a 1).
+    synonyms: [porcentaje competitivo, proporción de competencia, competitive share, competition rate]
+    tables: [tenders]
+  - name: avg_tenderers
+    expression_sql: AVG(tenders.number_of_tenderers)
+    description_en: Average number of bidders per tender.
+    description_es: Número promedio de oferentes por proceso.
+    synonyms: [promedio de oferentes, average bidders, participantes promedio]
+    tables: [tenders]
+  - name: contract_count
+    expression_sql: COUNT(*)
+    description_en: Number of contracts.
+    description_es: Número de contratos.
+    synonyms: [número de contratos, cantidad de contratos, contract count, how many contracts]
+    tables: [contracts]
+  - name: distinct_suppliers
+    expression_sql: COUNT(DISTINCT suppliers.supplier_id)
+    description_en: Number of distinct suppliers.
+    description_es: Número de proveedores distintos.
+    synonyms: [proveedores distintos, cantidad de proveedores, distinct suppliers, unique suppliers]
+    tables: [suppliers]
+  - name: distinct_buyers
+    expression_sql: COUNT(DISTINCT buyers.buyer_id)
+    description_en: Number of distinct contracting entities.
+    description_es: Número de entidades contratantes distintas.
+    synonyms: [compradores distintos, entidades distintas, distinct buyers, unique buyers]
+    tables: [buyers]
+  - name: total_contract_usd
+    expression_sql: SUM(contracts.amount_usd)
+    description_en: Total contracted amount in USD.
+    description_es: Monto total contratado en USD.
+    synonyms: [monto total contratado, valor contratado, total contracted, contract value]
+    tables: [contracts]
+  - name: planned_total_usd
+    expression_sql: SUM(tenders.planned_amount_usd)
+    description_en: Total planned/reference amount in USD (NULL for Subasta Inversa).
+    description_es: Monto planificado/referencial total en USD (NULL para Subasta Inversa).
+    synonyms: [presupuesto referencial total, monto planificado, planned total, reference budget]
+    tables: [tenders]
+
+relationships:
+  - from: tenders.buyer_id
+    to: buyers.buyer_id
+    "on": tenders.buyer_id = buyers.buyer_id
+  - from: awards.tender_id
+    to: tenders.tender_id
+    "on": awards.tender_id = tenders.tender_id
+  - from: awards.supplier_id
+    to: suppliers.supplier_id
+    "on": awards.supplier_id = suppliers.supplier_id
+  - from: contracts.tender_id
+    to: tenders.tender_id
+    "on": contracts.tender_id = tenders.tender_id
+  - from: tender_items.tender_id
+    to: tenders.tender_id
+    "on": tender_items.tender_id = tenders.tender_id
+
+glossary:
+  - terms: [catálogo electrónico, catalogo electronico, electronic catalogue]
+    meaning: Framework catalogue of pre-agreed goods and services; most 2021 processes are catalogue micro-purchases.
+  - terms: [subasta inversa, reverse auction, subasta inversa electrónica]
+    meaning: Reverse electronic auction where suppliers compete by lowering prices; SERCOP withholds the reference budget.
+  - terms: [menor cuantía, small purchase, menor cuantia]
+    meaning: Simplified low-value procurement procedure.
+  - terms: [cotización, request for quotation, cotizacion]
+    meaning: Procurement procedure based on comparing a small number of quotations.
+  - terms: [contratación directa, contratacion directa, direct contracting]
+    meaning: Direct award without a competitive procedure, allowed in specific legal cases.
+  - terms: [entre entidades públicas, contratos entre entidades públicas, inter-agency contract]
+    meaning: Contract between public entities or their subsidiaries.
+  - terms: [persona natural, natural person]
+    meaning: Individual supplier; pseudonymised in this warehouse as 'Persona natural PN-xxxxxx'.
+  - terms: [persona jurídica, legal person, company]
+    meaning: Company or other legal entity identified by a 13-digit RUC whose third digit is 9.
+  - terms: [RUC, registro único de contribuyentes, tax identification number]
+    meaning: Ecuadorian 13-digit taxpayer identifier; the third digit encodes the entity kind.
+  - terms: [proveedor, contratista, supplier, contractor]
+    meaning: Entity or person awarded a tender.
+  - terms: [entidad contratante, comprador, contracting entity, buyer]
+    meaning: Public institution that publishes and awards the contracting process.
+  - terms: [adjudicación, adjudicacion, award]
+    meaning: Decision to award a process to one or more suppliers, with its amount.
+  - terms: [contrato, contract]
+    meaning: Agreement derived from an award; its value may be absent for catalogue purchases.
+  - terms: [proceso de contratación, proceso, tender, procurement process]
+    meaning: End-to-end public procurement process identified by an OCDS ocid.
+  - terms: [presupuesto referencial, monto planificado, planned amount, reference budget]
+    meaning: Budget estimated by the buyer before awarding; NULL for Subasta Inversa by policy.
+  - terms: [monto adjudicado, awarded amount, valor adjudicado]
+    meaning: Amount awarded to a supplier in USD, the authoritative spend measure.
+  - terms: [provincia, province, región]
+    meaning: First-level administrative division of Ecuador, stored as an uppercase Spanish name.
+  - terms: [cantón, canton, municipio, municipality]
+    meaning: Second-level administrative division of Ecuador.
+  - terms: [CPC, clasificación CPC, common procurement vocabulary]
+    meaning: United Nations classification used by SERCOP to categorise goods and services.
+  - terms: [ítem, item, renglón, line item]
+    meaning: One line of a tender, with description, quantity, unit price and CPC code.
+  - terms: [oferente, bidder, participante]
+    meaning: Supplier that submitted an offer to a process.
+  - terms: [convocatoria, call for tenders, publicación]
+    meaning: Publication of a contracting process in 2021.
+  - terms: [obra, works, obras públicas]
+    meaning: Construction or public-works category of procurement.
+  - terms: [bienes, goods]
+    meaning: Tangible-goods category of procurement.
+  - terms: [servicios, services]
+    meaning: Services category of procurement.
+
+data_quirks:
+  - No tenders were released in June 2021; monthly time series have a gap.
+  - Only 216 tenders were released in November 2021, so that month is naturally low.
+  - contracts.signed_date is NULL for about 90% of rows; use tenders.release_date for time analysis.
+  - planned_amount_usd is NULL for every Subasta Inversa process because SERCOP withholds that budget by policy.
+  - Catalogue purchases usually have no contract value; use awards.amount_usd for spend analysis.
+  - About 87% of tenders are electronic-catalogue micro-purchases with a median planned amount near 62 USD.
+  - Natural-person suppliers are pseudonymised as 'Persona natural PN-xxxxxx'; aggregate them by supplier_id only.
+  - contracts has no primary key because the source repeats identifiers; deduplicate on the projected columns.
+  - All monetary values are in USD; tender_value_currency is either USD or NULL.

@@ -16,6 +16,7 @@ from typing import Any
 import httpx
 import structlog
 
+from sqlagent import REPOSITORY_URL
 from sqlagent.application.ports import (
     BackendInfo,
     LLMRequest,
@@ -34,7 +35,9 @@ HTTP_NOT_FOUND = 404
 HTTP_BAD_REQUEST = 400
 LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 DOCKER_HINT = (
-    "start Ollama with Docker: scripts/ollama-docker.sh up && scripts/ollama-docker.sh pull {model}"
+    "start Ollama with Docker from a clone of "
+    f"{REPOSITORY_URL}: scripts/ollama-docker.sh up && "
+    "scripts/ollama-docker.sh pull {model}"
 )
 
 
@@ -251,6 +254,6 @@ class OllamaLLM:
         detail = response.text[:200]
         return (
             f"model {model!r} is not available in Ollama ({detail}). "
-            f"Pull it with 'ollama pull {model}' or "
+            f"Pull it with 'ollama pull {model}' or, from a clone of {REPOSITORY_URL}, "
             f"'scripts/ollama-docker.sh pull {model}'."
         )

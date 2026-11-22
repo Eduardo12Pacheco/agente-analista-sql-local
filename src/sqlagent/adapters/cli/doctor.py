@@ -14,6 +14,7 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+from sqlagent import REPOSITORY_URL
 from sqlagent.adapters.llm.ollama import OllamaLLM
 from sqlagent.adapters.warehouse.etl import BUNDLE_DIR, verify_bundle
 from sqlagent.adapters.warehouse.lakehouse import LakehouseWarehouse, load_manifest
@@ -46,7 +47,10 @@ class DoctorReport:
 def _ollama_actions(model: str) -> tuple[str, ...]:
     return (
         f"native Ollama: ollama pull {model}",
-        f"Docker: scripts/ollama-docker.sh up && scripts/ollama-docker.sh pull {model}",
+        (
+            f"Docker, from a clone of {REPOSITORY_URL}: "
+            f"scripts/ollama-docker.sh up && scripts/ollama-docker.sh pull {model}"
+        ),
         "Docker endpoint: SQLAGENT_OLLAMA_URL=http://127.0.0.1:11435",
     )
 

@@ -7,6 +7,7 @@ from typing import Any
 
 from typer.testing import CliRunner
 
+from sqlagent import REPOSITORY_URL
 from sqlagent.adapters.cli import doctor as doctor_module
 from sqlagent.adapters.cli.main import app
 from sqlagent.adapters.llm.ollama import OllamaProbe
@@ -64,6 +65,7 @@ def test_doctor_without_ollama_reports_commands_and_exits_zero(
     assert "Ollama: not reachable" in output
     assert "scripts/ollama-docker.sh up" in output
     assert "scripts/ollama-docker.sh pull qwen2.5-coder:7b" in output
+    assert REPOSITORY_URL in output
     assert "warehouse OK" in output
 
 

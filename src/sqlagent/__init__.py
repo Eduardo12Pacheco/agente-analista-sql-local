@@ -7,4 +7,6 @@ try:
 except PackageNotFoundError:  # pragma: no cover - only when running from a raw checkout
     __version__ = "0.1.0"
 
-__all__ = ["__version__"]
+REPOSITORY_URL = "https://github.com/Eduardo12Pacheco/local-sql-analyst-agent"
+
+__all__ = ["REPOSITORY_URL", "__version__"]

@@ -80,7 +80,7 @@ sqlagent serve --demo
 
 `serve --demo` reproduce la cassette versionada, así que no necesita modelo ni red.
 Para respuestas en vivo, inicia Ollama, descarga el modelo por defecto y ejecuta
-`sqlagent ask`:
+`sqlagent ask`. El asistente Docker no viene con el paquete instalado: ejecútalo desde un clon de https://github.com/Eduardo12Pacheco/local-sql-analyst-agent:
 
 ```bash
 scripts/ollama-docker.sh up && scripts/ollama-docker.sh pull qwen2.5-coder:7b

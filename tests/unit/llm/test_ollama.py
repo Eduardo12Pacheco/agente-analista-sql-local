@@ -8,6 +8,7 @@ from typing import Any
 import httpx
 import pytest
 
+from sqlagent import REPOSITORY_URL
 from sqlagent.adapters.llm.ollama import OllamaLLM, is_loopback_url
 from sqlagent.application.ports import LLMOptions, LLMRequest, LLMResponse
 from sqlagent.config import Settings
@@ -128,6 +129,7 @@ def test_retries_twice_on_connect_error_then_raises_with_docker_hint() -> None:
     assert "olllama" not in message  # sanity: the hint is spelled correctly
     assert "scripts/ollama-docker.sh up" in message
     assert "scripts/ollama-docker.sh pull qwen3:8b" in message
+    assert REPOSITORY_URL in message
 
 
 def test_missing_model_404_names_the_pull_command() -> None:

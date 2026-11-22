@@ -81,7 +81,7 @@ sqlagent serve --demo
 ```
 
 `serve --demo` replays the committed cassette, so it needs no model and no network.
-For live answers, start Ollama and pull the default model, then run `sqlagent ask`:
+For live answers, start Ollama and pull the default model, then run `sqlagent ask`. The Docker helper is not part of the installed package: run these from a clone of https://github.com/Eduardo12Pacheco/local-sql-analyst-agent:
 
 ```bash
 scripts/ollama-docker.sh up && scripts/ollama-docker.sh pull qwen2.5-coder:7b

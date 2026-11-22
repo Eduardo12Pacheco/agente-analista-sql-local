@@ -52,17 +52,14 @@ jobs:
         run: uv build
 
       - name: Write checksums
-        run: |
-          cd dist
-          sha256sum * > ../SHA256SUMS
+        working-directory: dist
+        run: sha256sum -- * > SHA256SUMS
 
       - name: Upload distributions
         uses: actions/upload-artifact@v7
         with:
           name: dist
-          path: |
-            dist/*
-            SHA256SUMS
+          path: dist/*
           if-no-files-found: error
 
   smoke:

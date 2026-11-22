@@ -1,6 +1,6 @@
 # local-sql-analyst-agent
 
-[![CI](https://github.com/Eduardo12Pacheco/local-sql-analyst-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Eduardo12Pacheco/local-sql-analyst-agent/actions/workflows/ci.yml)
+[![CI](https://github.com/Eduardo12Pacheco/agente-analista-sql-local/actions/workflows/ci.yml/badge.svg)](https://github.com/Eduardo12Pacheco/agente-analista-sql-local/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](pyproject.toml)
 [![uv](https://img.shields.io/badge/managed%20with-uv-261230.svg)](https://docs.astral.sh/uv/)
@@ -65,7 +65,7 @@ flowchart LR
 Linux / macOS:
 
 ```bash
-uv tool install "https://github.com/Eduardo12Pacheco/local-sql-analyst-agent/releases/download/v0.1.0/local_sql_analyst_agent-0.1.0-py3-none-any.whl"
+uv tool install "https://github.com/Eduardo12Pacheco/agente-analista-sql-local/releases/download/v0.1.0/local_sql_analyst_agent-0.1.0-py3-none-any.whl"
 sqlagent doctor
 sqlagent serve --demo
 ```
@@ -73,14 +73,14 @@ sqlagent serve --demo
 Windows PowerShell:
 
 ```powershell
-uv tool install "https://github.com/Eduardo12Pacheco/local-sql-analyst-agent/releases/download/v0.1.0/local_sql_analyst_agent-0.1.0-py3-none-any.whl"
+uv tool install "https://github.com/Eduardo12Pacheco/agente-analista-sql-local/releases/download/v0.1.0/local_sql_analyst_agent-0.1.0-py3-none-any.whl"
 sqlagent doctor
 sqlagent serve --demo
 ```
 
 `serve --demo` reproduce la cassette versionada, así que no necesita modelo ni red.
 Para respuestas en vivo, inicia Ollama, descarga el modelo por defecto y ejecuta
-`sqlagent ask`. El asistente Docker no viene con el paquete instalado: ejecútalo desde un clon de https://github.com/Eduardo12Pacheco/local-sql-analyst-agent:
+`sqlagent ask`. El asistente Docker no viene con el paquete instalado: ejecútalo desde un clon de https://github.com/Eduardo12Pacheco/agente-analista-sql-local:
 
 ```bash
 scripts/ollama-docker.sh up && scripts/ollama-docker.sh pull qwen2.5-coder:7b

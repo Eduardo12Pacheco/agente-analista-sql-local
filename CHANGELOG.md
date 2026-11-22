@@ -46,4 +46,4 @@ First public release: a local-first AI data analyst over a bundled DuckDB wareho
 - Lookup values rank by matched query tokens so colloquial IESS/Guayas queries resolve
   to the canonical public entity and province names.
 
-[0.1.0]: https://github.com/Eduardo12Pacheco/local-sql-analyst-agent/releases/tag/v0.1.0
+[0.1.0]: https://github.com/Eduardo12Pacheco/agente-analista-sql-local/releases/tag/v0.1.0

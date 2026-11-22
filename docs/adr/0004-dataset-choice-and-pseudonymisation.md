@@ -11,10 +11,10 @@ verificó un CSV directo y estable), el portal CKAN de Ecuador (licencias mixtas
 datos) y OCHA/HDX (403 ante descargas automatizadas).
 
 Los datos masivos OCDS de SERCOP para 2021 se publican a través del registro de la Open
-Contracting Partnership bajo CC BY 3.0 Ecuador. Contienen 122.277 procesos de contratación,
-121.736 adjudicaciones y 293.287 registros de partes, y la política del publicador permite
+Contracting Partnership bajo CC BY 3.0 Ecuador. Contienen 122,277 procesos de contratación,
+121,736 adjudicaciones y 293,287 registros de partes, y la política del publicador permite
 expresamente la redistribución con un enlace a la fuente. También contienen nombres y RUC de
-proveedores, incluidas 6.086 personas naturales.
+proveedores, incluidas 6,086 personas naturales.
 
 ## Decisión
 
@@ -32,11 +32,11 @@ por clave y el manifiesto registra hashes, conteos de filas y huellas digitales.
 Los 96 identificadores heredados de proveedor que carecen del prefijo `EC-RUC-` no pueden
 clasificarse de forma segura y se agrupan en un único proveedor `other` (`ID-UNKNOWN`) con un
 nombre neutro. Así se mantiene válida cada clave foránea de adjudicación y se conservan las
-10.217 filas de proveedor fijadas, sin publicar identificadores no verificables.
+10,217 filas de proveedor fijadas, sin publicar identificadores no verificables.
 
 ## Consecuencias
 
-* El repositorio incluye unos 4,3 MB de Parquet y funciona por completo sin conexión.
+* El repositorio incluye unos 4.3 MB de Parquet y funciona por completo sin conexión.
 * Los valores reales de texto libre en español ejercitan el sanitizador y la capa semántica
   bilingüe.
 * El análisis agregado de personas naturales sigue siendo posible por `supplier_id`, pero los

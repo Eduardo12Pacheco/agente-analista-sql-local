@@ -16,7 +16,7 @@ Usar la **execution accuracy (EX)** sobre el benchmark v1 de 72 elementos como m
 Una predicción es correcta cuando sus filas de resultado coinciden con el resultado del SQL de
 referencia según D19 (ordenado solo cuando el SQL de referencia tiene un `ORDER BY` de primer
 nivel; en otro caso, como multiconjunto, con la tolerancia documentada para flotantes). El motor
-también informa intervalos de confianza de Wilson al 95 %, la tasa de SQL válido, la EX al primer
+también informa intervalos de confianza de Wilson al 95%, la tasa de SQL válido, la EX al primer
 intento, la mejora por reparación, la precisión de rechazo, aclaración e inrespondibilidad, la
 consistencia de pares ES↔EN, la exhaustividad de recuperación de tablas, la latencia y el uso de
 tokens, y una taxonomía automática de fallos.
@@ -39,7 +39,7 @@ idénticas; la ruta de producción registra la latencia de reloj de pared.
 * CI puede puntuar el benchmark completo sin conexión en bastante menos de un minuto y fallar ante
   una regresión sin GPU ni acceso a la red.
 * Las cifras del README se generan a partir de `summary.json`, nunca se escriben a mano; la
-  corrección del propio arnés se demuestra con un `OracleLLM` que obtiene 100 % y con un backend
+  corrección del propio arnés se demuestra con un `OracleLLM` que obtiene 100% y con un backend
   saboteado que debe activar la puerta.
 * Las salidas grabadas son una única ejecución determinista en una sola máquina, no una afirmación
   sobre la precisión general de text-to-SQL; el benchmark es pequeño (n = 72) y los intervalos de

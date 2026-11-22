@@ -171,7 +171,7 @@ concede escrituras ni acceso a archivos:
 | 1. Prompt | Instrucciones solo en `system`; los valores de la base de datos son bloques de datos no confiables | `application/agent/prompts.py` |
 | 2. AST | Una única sentencia de solo lectura, listas blancas de nodos, funciones y tablas, complejidad y reescritura de `LIMIT` | `domain/sql_policy.py` |
 | 3. Conexión | `read_only=True`, acceso externo desactivado, carga y autoinstalación de extensiones desactivadas, configuración bloqueada | `adapters/warehouse/duckdb_warehouse.py` |
-| 4. Recursos | Tope de 1.000 filas, vigilancia de 20 s, límite de memoria de 2 GB, 4 hilos, bucles del agente acotados | `domain/models.py`, adaptador del almacén, máquina del agente |
+| 4. Recursos | Tope de 1,000 filas, vigilancia de 20 s, límite de memoria de 2 GB, 4 hilos, bucles del agente acotados | `domain/models.py`, adaptador del almacén, máquina del agente |
 
 Además, `DataSanitizer` elimina los caracteres de control, bidireccionales y de ancho cero,
 neutraliza los imitadores de delimitadores, trunca celdas y filas, y marca los patrones de

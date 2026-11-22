@@ -7,9 +7,9 @@ Estado: aceptada (2026-11-20)
 El agente necesita un modelo local que siga instrucciones y produzca SQL restringido por JSON
 de forma fiable en español e inglés, que quepa en una RTX 4060 de 8 GB y que funcione sin
 ninguna API en la nube. Dos candidatos con licencia Apache-2.0 caben en el presupuesto de memoria
-con `num_ctx=8192`: `qwen3:8b` (5,2 GB, razonamiento conmutable, narración multilingüe sólida) y
-`qwen2.5-coder:7b` (4,7 GB, especializado en código, con una precisión de ejecución zero-shot
-reportada de alrededor del 42,6 % en BIRD-dev). El plan fija la regla de selección: medir ambos
+con `num_ctx=8192`: `qwen3:8b` (5.2 GB, razonamiento conmutable, narración multilingüe sólida) y
+`qwen2.5-coder:7b` (4.7 GB, especializado en código, con una precisión de ejecución zero-shot
+reportada de alrededor del 42.6% en BIRD-dev). El plan fija la regla de selección: medir ambos
 en el benchmark v1 con configuraciones deterministas idénticas y quedarse con la mayor execution
 accuracy global; en caso de empate, gana `qwen3:8b`.
 
@@ -24,7 +24,7 @@ configuración que registra la cassette incluida.
   `num_ctx=8192`, `num_predict=768` y la narración desactivada. Para qwen3 se envía
   `think:false`.
 - **Por defecto.** Fijar `DEFAULT_MODEL` a partir del resultado medido. La ejecución del 2026-11-20
-  produjo EX 63,3 % [50,7 %, 74,4 %] para `qwen2.5-coder:7b` y 61,7 % [49,0 %, 72,9 %] para
+  produjo EX 63.3% [50.7%, 74.4%] para `qwen2.5-coder:7b` y 61.7% [49.0%, 72.9%] para
   `qwen3:8b`, así que `qwen2.5-coder:7b` es el valor por defecto. Los intervalos se solapan; el
   README y `docs/EVAL.md` indican que se trata de una diferencia pequeña y ruidosa sobre 60
   elementos respondibles.

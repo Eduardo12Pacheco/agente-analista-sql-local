@@ -1,21 +1,21 @@
-# Architecture
+# Arquitectura
 
-`local-sql-analyst-agent` is a local-first, hexagonal Python 3.12 application. The
-domain is pure (stdlib plus `sqlglot`); application use cases orchestrate it
-through ports; adapters provide the CLI, web chat, LLM backends, warehouse and
-repositories. Dependency direction is enforced by import-linter contracts in
-`pyproject.toml` and by `tests/architecture/test_import_contracts.py`.
+`local-sql-analyst-agent` es una aplicación Python 3.12 local-first y hexagonal. El dominio es
+puro (biblioteca estándar más `sqlglot`); los casos de uso de la aplicación lo orquestan a través
+de puertos; los adaptadores proporcionan la CLI, el chat web, los backends de LLM, el almacén y
+los repositorios. La dirección de las dependencias la imponen los contratos de import-linter en
+`pyproject.toml` y `tests/architecture/test_import_contracts.py`.
 
-## Layers
+## Capas
 
-| Layer | Package | May import |
+| Capa | Paquete | Puede importar |
 |---|---|---|
-| Domain | `sqlagent.domain` | stdlib and `sqlglot` only |
-| Application | `sqlagent.application` | `sqlagent.domain` only |
-| Adapters | `sqlagent.adapters` | `sqlagent.domain`, `sqlagent.application` |
-| Composition | `sqlagent.config`, `sqlagent.logging`, `sqlagent.bootstrap` | all layers (composition root) |
+| Dominio | `sqlagent.domain` | solo la biblioteca estándar y `sqlglot` |
+| Aplicación | `sqlagent.application` | solo `sqlagent.domain` |
+| Adaptadores | `sqlagent.adapters` | `sqlagent.domain`, `sqlagent.application` |
+| Composición | `sqlagent.config`, `sqlagent.logging`, `sqlagent.bootstrap` | todas las capas (raíz de composición) |
 
-## Module tree
+## Árbol de módulos
 
 ```
 src/sqlagent/
@@ -47,18 +47,18 @@ src/sqlagent/
 └── resources/           # semantic layer, few-shots, Parquet bundle, benchmark, cassettes
 ```
 
-## Ports
+## Puertos
 
-| Port (`application/ports.py`) | Methods | Adapters |
+| Puerto (`application/ports.py`) | Métodos | Adaptadores |
 |---|---|---|
-| `LLMPort` | `complete(LLMRequest) -> LLMResponse`; `describe() -> BackendInfo` | `OllamaLLM`, `ScriptedLLM`, `ReplayLLM`, `RecordingLLM` (decorator) |
-| `WarehousePort` | `execute(ValidatedQuery)`; `lookup_values(...)`; `catalog()`; `info()` | `DuckDbWarehouse` (bundled/materialised or external lakehouse) |
+| `LLMPort` | `complete(LLMRequest) -> LLMResponse`; `describe() -> BackendInfo` | `OllamaLLM`, `ScriptedLLM`, `ReplayLLM`, `RecordingLLM` (decorador) |
+| `WarehousePort` | `execute(ValidatedQuery)`; `lookup_values(...)`; `catalog()`; `info()` | `DuckDbWarehouse` (empaquetado/materializado o lakehouse externo) |
 | `SemanticLayerRepository` | `load() -> SemanticLayer` | `YamlSemanticLayerRepository`, `ManifestSemanticLayerRepository` |
 | `BenchmarkRepository` | `load(version) -> Benchmark` | `YamlBenchmarkRepository` |
 | `ReportWriter` | `write(summary, results, out_dir)` | `MarkdownHtmlReportWriter` |
 | `EventSink` | `emit(AgentEvent)` | `NullSink`, `CliProgressSink`, `QueueSink` (web) |
 
-## System diagram
+## Diagrama del sistema
 
 ```mermaid
 flowchart LR
@@ -102,11 +102,11 @@ flowchart LR
   EVAL --> REP
 ```
 
-## Agent state machine
+## Máquina de estados del agente
 
-The agent is an explicit handler table over `Phase`, not a framework graph
-(ADR-0001). Every loop is bounded: ≤ 3 `lookup_values` calls, ≤ 2 repairs, one
-protocol retry per LLM call and a hard cap of 12 LLM calls per question.
+El agente es una tabla explícita de manejadores sobre `Phase`, no un grafo de un framework
+(ADR-0001). Todos los bucles están acotados: ≤ 3 llamadas a `lookup_values`, ≤ 2 reparaciones,
+un reintento de protocolo por llamada al LLM y un tope de 12 llamadas al LLM por pregunta.
 
 ```mermaid
 stateDiagram-v2
@@ -135,68 +135,67 @@ stateDiagram-v2
   DONE --> [*]
 ```
 
-## Design patterns
+## Patrones de diseño
 
-- **Hexagonal ports and adapters.** The domain and application never import
-  DuckDB, httpx, FastAPI, Typer, YAML or pydantic; the composition root
-  (`bootstrap.py`) chooses adapters from typed settings.
-- **State machine.** `application/agent/machine.py` maps each `Phase` to a
-  handler, keeping termination and budgets auditable.
-- **Chain of responsibility.** `domain/sql_policy.py` runs ordered rules
-  (`LengthRule`, `ParseRule`, `RootRule`, `NodeRule`, `FunctionRule`,
-  `TableRule`, `ComplexityRule`, `LimitRule`); the first rejection wins.
-- **Parse, don't validate.** `ValidatedQuery` can only be produced by
-  `SqlPolicy.validate`, carries the regenerated AST SQL and the effective limit,
-  and is the only query type `WarehousePort.execute` accepts.
-- **Decorator.** `RecordingLLM` and `ReplayLLM` wrap another `LLMPort` without
-  changing the agent.
-- **Strategy.** Chart rules, the BM25 retriever and LLM backends are
-  interchangeable implementations behind a small contract.
-- **Repository.** The semantic layer, benchmark and few-shots are loaded from
-  versioned resources through repository adapters.
-- **Factory / composition root.** `bootstrap.py` builds LLMs, warehouses and
-  agents from `Settings`.
-- **Observer and null object.** `EventSink` receives `AgentEvent`s; `NullSink`
-  is the no-op default and `QueueSink`/`ThreadEventSink` feed the web UI.
-- **Record/replay cassette testing.** Real model calls are recorded as JSONL
-  keyed by a SHA-256 of the canonical request; replay reproduces usage and
-  latency offline and fails with `CassetteMiss` when a prompt changed.
+- **Puertos y adaptadores (hexagonal).** El dominio y la aplicación nunca importan DuckDB, httpx,
+  FastAPI, Typer, YAML ni pydantic; la raíz de composición (`bootstrap.py`) elige los adaptadores
+  a partir de la configuración tipada.
+- **Máquina de estados.** `application/agent/machine.py` asocia cada `Phase` con un manejador, lo
+  que mantiene auditables la terminación y los presupuestos.
+- **Cadena de responsabilidad.** `domain/sql_policy.py` ejecuta reglas ordenadas (`LengthRule`,
+  `ParseRule`, `RootRule`, `NodeRule`, `FunctionRule`, `TableRule`, `ComplexityRule`, `LimitRule`);
+  gana el primer rechazo.
+- **Analizar, no validar (*parse, don't validate*).** `ValidatedQuery` solo puede producirlo
+  `SqlPolicy.validate`, transporta el SQL regenerado desde el AST y el límite efectivo, y es el
+  único tipo de consulta que acepta `WarehousePort.execute`.
+- **Decorador.** `RecordingLLM` y `ReplayLLM` envuelven otro `LLMPort` sin cambiar el agente.
+- **Estrategia.** Las reglas de gráficos, el recuperador BM25 y los backends de LLM son
+  implementaciones intercambiables tras un contrato pequeño.
+- **Repositorio.** La capa semántica, el benchmark y los ejemplos few-shot se cargan desde
+  recursos versionados mediante adaptadores de repositorio.
+- **Fábrica / raíz de composición.** `bootstrap.py` construye los LLM, los almacenes y los
+  agentes a partir de `Settings`.
+- **Observador y objeto nulo.** `EventSink` recibe los `AgentEvent`; `NullSink` es el valor por
+  defecto sin operación, y `QueueSink`/`ThreadEventSink` alimentan la interfaz web.
+- **Pruebas con grabación y reproducción de cassettes.** Las llamadas reales al modelo se graban
+  como JSONL indexado por un SHA-256 de la solicitud canónica; la reproducción recrea el uso y la
+  latencia sin conexión y falla con `CassetteMiss` cuando cambia un prompt.
 
-## Defence in depth
+## Defensa en profundidad
 
-The SQL path is protected at four independent levels so bypassing one does not
-grant writes or file access:
+La ruta del SQL está protegida en cuatro niveles independientes, de modo que saltarse uno no
+concede escrituras ni acceso a archivos:
 
-| Level | Mechanism | Where |
+| Nivel | Mecanismo | Dónde |
 |---|---|---|
-| 1. Prompt | Instructions only in `system`; DB values are untrusted data blocks | `application/agent/prompts.py` |
-| 2. AST | Single read-only statement, node/function/table allowlists, complexity and LIMIT rewrite | `domain/sql_policy.py` |
-| 3. Connection | `read_only=True`, external access off, extension autoload/autoinstall off, configuration locked | `adapters/warehouse/duckdb_warehouse.py` |
-| 4. Resources | 1,000-row cap, 20 s watchdog, 2 GB memory limit, 4 threads, bounded agent loops | `domain/models.py`, warehouse adapter, agent machine |
+| 1. Prompt | Instrucciones solo en `system`; los valores de la base de datos son bloques de datos no confiables | `application/agent/prompts.py` |
+| 2. AST | Una única sentencia de solo lectura, listas blancas de nodos, funciones y tablas, complejidad y reescritura de `LIMIT` | `domain/sql_policy.py` |
+| 3. Conexión | `read_only=True`, acceso externo desactivado, carga y autoinstalación de extensiones desactivadas, configuración bloqueada | `adapters/warehouse/duckdb_warehouse.py` |
+| 4. Recursos | Tope de 1.000 filas, vigilancia de 20 s, límite de memoria de 2 GB, 4 hilos, bucles del agente acotados | `domain/models.py`, adaptador del almacén, máquina del agente |
 
-On top of that, `DataSanitizer` strips control/bidi/zero-width characters,
-neutralises delimiter look-alikes, truncates cells and rows, and flags known
-injection patterns; the web adapter escapes every rendered value.
+Además, `DataSanitizer` elimina los caracteres de control, bidireccionales y de ancho cero,
+neutraliza los imitadores de delimitadores, trunca celdas y filas, y marca los patrones de
+inyección conocidos; el adaptador web escapa cada valor renderizado.
 
-## Extension guide: add a new LLM backend in 3 steps
+## Guía de extensión: añadir un backend de LLM en 3 pasos
 
-1. Implement `LLMPort` (`complete` and `describe`) in
-   `src/sqlagent/adapters/llm/<backend>.py`. Reuse `LLMRequest`, `LLMResponse`,
-   `LLMError` and the canonical request helpers; never import the agent.
-2. Return the response `content` as raw text. The agent parses and validates the
-   flat JSON action, so the adapter must not execute SQL or dispatch tools.
-3. Register the backend in `bootstrap.build_llm` and add it to the CLI
-   `--llm` choices (plus the settings literal if it is configurable). Add the
-   backend to `tests/contract/test_llm_port_contract.py`; the parametrised suite
-   is the acceptance test for the port.
+1. Implementa `LLMPort` (`complete` y `describe`) en
+   `src/sqlagent/adapters/llm/<backend>.py`. Reutiliza `LLMRequest`, `LLMResponse`,
+   `LLMError` y los auxiliares de solicitud canónica; nunca importes el agente.
+2. Devuelve el `content` de la respuesta como texto sin procesar. El agente analiza y valida la
+   acción JSON plana, así que el adaptador no debe ejecutar SQL ni despachar herramientas.
+3. Registra el backend en `bootstrap.build_llm` y añádelo a las opciones de `--llm` de la CLI
+   (más el literal de configuración si es configurable). Añade el backend a
+   `tests/contract/test_llm_port_contract.py`; la suite parametrizada es la prueba de
+   aceptación del puerto.
 
-For a new warehouse, implement `WarehousePort` and expose a `SemanticLayer`;
-`--manifest` is the supported external path (see `docs/LAKEHOUSE.md`).
+Para un nuevo almacén, implementa `WarehousePort` y expón un `SemanticLayer`; `--manifest` es la
+ruta externa compatible (véase `docs/LAKEHOUSE.md`).
 
-## Related documents
+## Documentos relacionados
 
-- `docs/DATA.md`: dataset, licence, ETL, bundle hashes.
-- `docs/EVAL.md`: benchmark, metrics, reports, gate and measured results.
-- `docs/CONFIGURATION.md`: every `SQLAGENT_*` setting.
-- `docs/LAKEHOUSE.md`: external warehouse manifest contract.
-- `docs/adr/`: the nine architecture decisions.
+- `docs/DATA.md`: conjunto de datos, licencia, ETL y hashes del paquete.
+- `docs/EVAL.md`: benchmark, métricas, informes, puerta de regresión y resultados medidos.
+- `docs/CONFIGURATION.md`: cada ajuste `SQLAGENT_*`.
+- `docs/LAKEHOUSE.md`: contrato del manifiesto de almacén externo.
+- `docs/adr/`: las nueve decisiones de arquitectura.

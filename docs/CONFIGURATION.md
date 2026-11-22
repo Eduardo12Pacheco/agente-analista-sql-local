@@ -1,36 +1,37 @@
-# Configuration
+# Configuración
 
-All runtime configuration is read from `SQLAGENT_*` environment variables
-(`pydantic-settings`, prefix `SQLAGENT_`). `.env` files are intentionally **not**
-read, so a stray file cannot change a deterministic run. Settings are immutable at
-runtime; pass overrides as environment variables or keywords in tests.
+Toda la configuración en tiempo de ejecución se lee de las variables de entorno `SQLAGENT_*`
+(`pydantic-settings`, prefijo `SQLAGENT_`). Los archivos `.env` **no** se leen de forma
+intencionada, para que un archivo suelto no pueda cambiar una ejecución determinista. Los ajustes
+son inmutables en tiempo de ejecución; en las pruebas, pasa las anulaciones como variables de
+entorno o como argumentos nombrados.
 
-| Variable | Default | Description |
+| Variable | Valor por defecto | Descripción |
 |---|---|---|
-| `SQLAGENT_LLM_BACKEND` | `ollama` | Completion backend: `ollama` or `replay` (committed cassette, offline). |
-| `SQLAGENT_OLLAMA_URL` | `http://127.0.0.1:11434` | Ollama base URL. Non-loopback hosts require `SQLAGENT_ALLOW_REMOTE_LLM=1`. |
-| `SQLAGENT_MODEL` | `qwen2.5-coder:7b` | Ollama model name used for completions (chosen in T12 by benchmark EX, D10). |
-| `SQLAGENT_NUM_CTX` | `8192` | Context window sent as `options.num_ctx`. |
-| `SQLAGENT_TEMPERATURE` | `0.0` | Sampling temperature (deterministic default). |
-| `SQLAGENT_SEED` | `42` | Sampling seed sent as `options.seed`. |
-| `SQLAGENT_REQUEST_TIMEOUT_S` | `120` | Read timeout for one Ollama request, in seconds. |
-| `SQLAGENT_NUM_PREDICT` | `768` | Maximum generated tokens per call. |
-| `SQLAGENT_ALLOW_REMOTE_LLM` | `0` | Allow a non-loopback Ollama URL; logs a warning when enabled (S19). |
-| `SQLAGENT_MAX_ROWS` | `1000` | Hard result cap; a larger SQL `LIMIT` is clamped. |
-| `SQLAGENT_UI_ROWS` | `200` | Rows rendered by the CLI/web UI. |
-| `SQLAGENT_QUERY_TIMEOUT_S` | `20` | Watchdog timeout for one DuckDB query. |
-| `SQLAGENT_MEMORY_LIMIT` | `2GB` | DuckDB `memory_limit` on the read-only connection. |
-| `SQLAGENT_THREADS` | `4` | DuckDB worker threads. |
-| `SQLAGENT_MAX_REPAIRS` | `2` | Maximum REPAIR calls per question. |
-| `SQLAGENT_MAX_TOOL_CALLS` | `3` | Maximum `lookup_values` tool calls per question. |
-| `SQLAGENT_DATA_DIR` | platform user data dir | Where the materialised `warehouse-<sha8>.duckdb` lives. |
-| `SQLAGENT_WAREHOUSE_PATH` | unset | Use an existing DuckDB file instead of materialising the bundle. |
-| `SQLAGENT_LAKEHOUSE_MANIFEST` | unset | Optional lakehouse manifest path (T11). |
-| `SQLAGENT_LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` or `CRITICAL`. |
-| `SQLAGENT_LOG_FORMAT` | `console` | `console` for a TTY renderer, `json` for structured logs. |
-| `SQLAGENT_UI_LANG` | `auto` | Web UI chrome language: `auto`, `es` or `en`. |
+| `SQLAGENT_LLM_BACKEND` | `ollama` | Backend de completado: `ollama` o `replay` (cassette versionada, sin conexión). |
+| `SQLAGENT_OLLAMA_URL` | `http://127.0.0.1:11434` | URL base de Ollama. Los hosts que no son loopback requieren `SQLAGENT_ALLOW_REMOTE_LLM=1`. |
+| `SQLAGENT_MODEL` | `qwen2.5-coder:7b` | Nombre del modelo de Ollama usado para los completados (elegido en T12 por la EX del benchmark, D10). |
+| `SQLAGENT_NUM_CTX` | `8192` | Ventana de contexto enviada como `options.num_ctx`. |
+| `SQLAGENT_TEMPERATURE` | `0.0` | Temperatura de muestreo (valor por defecto determinista). |
+| `SQLAGENT_SEED` | `42` | Semilla de muestreo enviada como `options.seed`. |
+| `SQLAGENT_REQUEST_TIMEOUT_S` | `120` | Tiempo de espera de lectura para una solicitud a Ollama, en segundos. |
+| `SQLAGENT_NUM_PREDICT` | `768` | Máximo de tokens generados por llamada. |
+| `SQLAGENT_ALLOW_REMOTE_LLM` | `0` | Permite una URL de Ollama que no sea loopback; registra una advertencia cuando está activo (S19). |
+| `SQLAGENT_MAX_ROWS` | `1000` | Tope estricto del resultado; un `LIMIT` de SQL mayor se recorta. |
+| `SQLAGENT_UI_ROWS` | `200` | Filas renderizadas por la CLI y la interfaz web. |
+| `SQLAGENT_QUERY_TIMEOUT_S` | `20` | Tiempo de espera del vigilante para una consulta de DuckDB. |
+| `SQLAGENT_MEMORY_LIMIT` | `2GB` | `memory_limit` de DuckDB en la conexión de solo lectura. |
+| `SQLAGENT_THREADS` | `4` | Hilos de trabajo de DuckDB. |
+| `SQLAGENT_MAX_REPAIRS` | `2` | Máximo de llamadas REPAIR por pregunta. |
+| `SQLAGENT_MAX_TOOL_CALLS` | `3` | Máximo de llamadas `lookup_values` por pregunta. |
+| `SQLAGENT_DATA_DIR` | directorio de datos de usuario de la plataforma | Dónde vive el `warehouse-<sha8>.duckdb` materializado. |
+| `SQLAGENT_WAREHOUSE_PATH` | sin definir | Usa un archivo DuckDB existente en lugar de materializar el paquete. |
+| `SQLAGENT_LAKEHOUSE_MANIFEST` | sin definir | Ruta opcional del manifiesto de lakehouse (T11). |
+| `SQLAGENT_LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` o `CRITICAL`. |
+| `SQLAGENT_LOG_FORMAT` | `console` | `console` para un renderizador de TTY, `json` para registros estructurados. |
+| `SQLAGENT_UI_LANG` | `auto` | Idioma de la interfaz web: `auto`, `es` o `en`. |
 
-## Examples
+## Ejemplos
 
 ```bash
 # Native Ollama on the default port
@@ -43,7 +44,6 @@ SQLAGENT_OLLAMA_URL=http://127.0.0.1:11435 sqlagent doctor
 SQLAGENT_LLM_BACKEND=replay sqlagent ask "¿Cuántos procesos hay?"
 ```
 
-Settings are validated at startup: an invalid value (for example a negative
-timeout) raises a pydantic `ValidationError` before any warehouse or network
-access. A settings field missing from the table above fails
-`tests/unit/test_settings.py`.
+Los ajustes se validan al arrancar: un valor no válido (por ejemplo, un tiempo de espera negativo)
+lanza un `ValidationError` de pydantic antes de cualquier acceso al almacén o a la red. Un campo
+de configuración que falte en la tabla anterior hace fallar `tests/unit/test_settings.py`.

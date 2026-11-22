@@ -54,24 +54,26 @@ def _local_targets(document: Path) -> list[str]:
 
 
 SPANISH_README_SECTIONS = (
-    "## Qué hace",
-    "## Por qué es interesante",
-    "## Arquitectura",
+    "## Qué es",
+    "## Por qué es distinto",
+    "## Cómo funciona",
     "## Inicio rápido",
     "## Resultados",
     "## Datos y atribución",
     "## Documentación",
     "## Limitaciones",
+    "## Licencia y autor",
 )
 ENGLISH_README_SECTIONS = (
-    "## What it does",
-    "## Why it is interesting",
-    "## Architecture",
+    "## What it is",
+    "## Why it is different",
+    "## How it works",
     "## Quickstart",
     "## Results",
     "## Data and attribution",
     "## Documentation",
-    "## Limitations",
+    "## Honest limitations",
+    "## License and author",
 )
 
 
@@ -91,19 +93,43 @@ def test_readme_budget_and_sections(document: Path, sections: tuple[str, ...]) -
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    ("document", "switcher"),
+    ("document", "switcher", "hero"),
     [
-        (README, "**Español** · [English](README.en.md)"),
-        (README_EN, "[Español](README.md) · **English**"),
+        (README, "**Español** · [English](README.en.md)", "docs/assets/readme/hero.svg"),
+        (README_EN, "[Español](README.md) · **English**", "docs/assets/readme/hero.en.svg"),
     ],
 )
-def test_readme_has_badges_hero_and_media_links(document: Path, switcher: str) -> None:
+def test_readme_has_badges_hero_and_media_links(document: Path, switcher: str, hero: str) -> None:
     text = _read(document)
-    for badge in ("badge.svg", "license-MIT", "python-3.12", "managed%20with-uv"):
+    for badge in ("badge.svg", "license-MIT", "python-3.12"):
         assert badge in text
+    # Assessment-only badge row: CI, release, license and Python at most.
+    assert len(re.findall(r"badge\.svg|img\.shields\.io", text)) <= 4
+    assert hero in text
     assert "docs/assets/demo.gif" in text
     assert "docs/assets/hero-light.png" in text
     assert text.splitlines()[2] == switcher
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("hero", ["hero.svg", "hero.en.svg"])
+def test_hero_svg_is_static_and_self_contained(hero: str) -> None:
+    text = _read(ASSETS / "readme" / hero)
+    assert text.startswith("<svg ")
+    assert 'viewBox="0 0 1200 400"' in text
+    assert "<title" in text and "<desc" in text
+    forbidden = (
+        "<script",
+        "foreignObject",
+        "<style",
+        "@import",
+        "@font-face",
+        "<image",
+        'href="http',
+        "url(http",
+    )
+    for token in forbidden:
+        assert token not in text, token
 
 
 @pytest.mark.unit
@@ -203,7 +229,7 @@ def test_no_owner_home_paths_in_public_docs() -> None:
         ),
         (
             README_EN,
-            "## Limitations",
+            "## Honest limitations",
             ("single warehouse", "n = 72", "wide", "lexical", "one machine"),
         ),
     ],

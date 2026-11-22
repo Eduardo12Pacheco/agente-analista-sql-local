@@ -1,54 +1,56 @@
-# ADR-0002: Constrained JSON protocol instead of provider-native tool calling
+# ADR-0002: Protocolo JSON restringido en lugar de llamadas a herramientas nativas del proveedor
 
-- **Status:** Accepted
-- **Date:** 2026-11-20
-- **Deciders:** Eduardo Pacheco
+- **Estado:** Aceptada
+- **Fecha:** 2026-11-20
+- **Decisores:** Eduardo Pacheco
 
-## Context
+## Contexto
 
-The agent needs the model to choose between four actions (`final_sql`,
-`lookup_values`, `clarify`, `refuse`) and to return a short plan. The default backend is
-a small local model served by Ollama. Provider-native tool calling exists, but small
-models frequently mis-emit native tool calls or invent tool names, and the exact prompt
-format differs between backends. We also need identical prompts to replay
-deterministically from recordings, and scripted fakes must exercise the same protocol.
+El agente necesita que el modelo elija entre cuatro acciones (`final_sql`, `lookup_values`,
+`clarify`, `refuse`) y que devuelva un plan breve. El backend por defecto es un modelo local
+pequeño servido por Ollama. Existen las llamadas a herramientas nativas del proveedor, pero los
+modelos pequeños con frecuencia emiten mal esas llamadas o inventan nombres de herramientas, y
+el formato exacto del prompt cambia entre backends. También necesitamos prompts idénticos para
+reproducir de forma determinista desde las grabaciones, y los dobles de prueba predefinidos
+deben ejercitar el mismo protocolo.
 
-Ollama 0.40.x supports JSON-schema-constrained decoding through the `format` field of
-`/api/chat`, which can remove most syntax errors without any provider-specific tool
-machinery.
+Ollama 0.40.x admite la decodificación restringida por JSON Schema mediante el campo `format`
+de `/api/chat`, lo que puede eliminar la mayoría de los errores de sintaxis sin ninguna
+maquinaria de herramientas específica del proveedor.
 
-## Decision
+## Decisión
 
-Define one flat JSON object, validated by a JSON Schema (and by a Pydantic model in the
-application layer), with fields:
+Definir un objeto JSON plano, validado con un JSON Schema (y con un modelo Pydantic en la capa
+de aplicación), con estos campos:
 
-- `plan[]`: one to five short steps (at most 160 characters each).
-- `action`: one of `final_sql`, `lookup_values`, `clarify`, `refuse`.
-- `sql`, `lookup`, `message`: conditional fields required by the chosen action.
+- `plan[]`: de uno a cinco pasos breves (como máximo 160 caracteres cada uno).
+- `action`: una de `final_sql`, `lookup_values`, `clarify`, `refuse`.
+- `sql`, `lookup`, `message`: campos condicionales requeridos por la acción elegida.
 
-The same schema is passed to Ollama's `format` field, used by `ScriptedLLM` tests and
-included in recorded cassettes. Invalid JSON or schema violations get one protocol retry,
-then a graceful `FAILED` answer. The loop dispatches `lookup_values` itself; the model
-never executes tools directly.
+El mismo esquema se pasa al campo `format` de Ollama, lo usan las pruebas con `ScriptedLLM` y
+se incluye en las cassettes grabadas. Un JSON inválido o una violación del esquema reciben un
+reintento de protocolo; después, una respuesta `FAILED` controlada. El ciclo despacha él mismo
+`lookup_values`; el modelo nunca ejecuta herramientas directamente.
 
-## Consequences
+## Consecuencias
 
-- Works identically across Ollama models and test fakes; no dependency on native tool
-  calling support.
-- The plan is a field of the same output instead of a second LLM call, saving a round
-  trip and keeping latency lower.
-- The prompt and schema are part of the cassette key, so protocol changes visibly
-  invalidate recordings instead of silently changing behaviour.
-- We give up automatic tool orchestration from the provider and must parse and validate
-  every response ourselves. The schema is small and the validation is tested.
-- A model that cannot follow JSON may need the one retry; after that the answer is a
-  friendly failure rather than an exception.
+- Funciona igual entre modelos de Ollama y dobles de prueba; no depende del soporte de llamadas
+  a herramientas nativas.
+- El plan es un campo de la misma salida en lugar de una segunda llamada al LLM, lo que ahorra
+  un viaje de ida y vuelta y mantiene menor la latencia.
+- El prompt y el esquema forman parte de la clave de la cassette, así que los cambios de
+  protocolo invalidan visiblemente las grabaciones en lugar de cambiar el comportamiento en
+  silencio.
+- Renunciamos a la orquestación automática de herramientas del proveedor y debemos analizar y
+  validar cada respuesta nosotros mismos. El esquema es pequeño y la validación está probada.
+- Un modelo que no pueda seguir el formato JSON puede necesitar el único reintento; después de
+  eso, la respuesta es un fallo amable en lugar de una excepción.
 
-## Alternatives considered
+## Alternativas consideradas
 
-- **Provider-native tool calling:** rejected for cross-backend inconsistency, poor
-  behaviour on small models and harder deterministic replay.
-- **Free-form text plus regex extraction:** rejected as brittle and unsafe; it invites
-  malformed SQL and ambiguous action selection.
-- **Separate planning call:** rejected because it doubles latency and cost for a plan
-  that only feeds the trace and UI.
+- **Llamadas a herramientas nativas del proveedor:** rechazadas por la inconsistencia entre
+  backends, el mal comportamiento en modelos pequeños y la reproducción determinista más difícil.
+- **Texto libre con extracción por expresiones regulares:** rechazado por frágil e inseguro;
+  invita a SQL malformado y a una selección de acción ambigua.
+- **Una llamada de planificación separada:** rechazada porque duplica la latencia y el costo por
+  un plan que solo alimenta la traza y la interfaz.

@@ -1,68 +1,69 @@
-# ADR-0009: Prompt-injection handling for untrusted data values
+# ADR-0009: Tratamiento de inyección de prompts en valores de datos no confiables
 
-- **Status:** Accepted
-- **Date:** 2026-11-20
-- **Deciders:** Eduardo Pacheco
+- **Estado:** Aceptada
+- **Fecha:** 2026-11-20
+- **Decisores:** Eduardo Pacheco
 
-## Context
+## Contexto
 
-The SERCOP warehouse contains free-text fields (tender descriptions, supplier names,
-item descriptions) written by external parties. Any of them can contain instructions
-aimed at the model: "ignore previous instructions", a fake block terminator, bidi text
-that hides content, or an XSS payload intended for the web UI. The agent feeds some of
-these values back into prompts for narration and value lookup, so the data channel and
-the instruction channel must be separated deliberately.
+El almacén SERCOP contiene campos de texto libre (descripciones de licitaciones, nombres de
+proveedores, descripciones de ítems) escritos por terceros. Cualquiera de ellos puede contener
+instrucciones dirigidas al modelo: «ignora las instrucciones anteriores», un terminador de bloque
+falso, texto bidireccional que oculta contenido o una carga XSS destinada a la interfaz web. El
+agente reintroduce algunos de estos valores en los prompts para la narración y la búsqueda de
+valores, así que el canal de datos y el canal de instrucciones deben separarse de forma deliberada.
 
-The real execution boundary is the SQL validator (ADR-0003): data must never be able to
-produce new SQL. But the model can still be confused into leaking its prompt, narrating
-an injected instruction as fact, or asking for extra tool calls. The trace and the UI
-must make injection attempts visible without destroying evidence.
+La frontera de ejecución real es el validador de SQL (ADR-0003): los datos nunca deben poder
+producir SQL nuevo. Pero el modelo aún puede confundirse hasta filtrar su prompt, narrar una
+instrucción inyectada como un hecho o pedir llamadas adicionales a herramientas. La traza y la
+interfaz deben hacer visibles los intentos de inyección sin destruir la evidencia.
 
-## Decision
+## Decisión
 
-Treat every database value as hostile text and route it through `DataSanitizer`:
+Tratar cada valor de base de datos como texto hostil y enrutarlo a través de `DataSanitizer`:
 
-1. Instructions live only in the `system` message; the user question is a `user`
-   message; database-derived text appears only inside delimited data blocks.
-2. Blocks are `<<DATA nonce=<8 hex> kind=<rows|lookup>>>`, a JSON payload and
-   `<<END DATA nonce=<8 hex>>>`. The nonce is the SHA-256 of the payload, so an attacker
-   cannot pre-embed a valid terminator; any `<<END DATA` or `<<DATA` inside a cell is
-   neutralised. Rendering is deterministic, which keeps cassettes replayable.
-3. Strip C0/C1 controls (except newline and tab), bidi overrides, zero-width characters
-   and the BOM.
-4. Truncate cells to 200 characters (including the flag marker) and payloads to 20 rows
-   for narration and 10 values for lookups.
-5. Flag, do not delete, cells matching the ES/EN injection patterns by appending
-   `⟦flagged⟧` and counting the match. The count is exposed in the agent trace and the UI
-   shows a badge; deleting the text would hide the attempt and change what the model sees
-   in ways that are harder to explain.
-6. The agent never executes text derived from data: SQL only comes from the
-   `final_sql`/repair actions and always passes `SqlPolicy` before execution.
-7. The web UI autoescapes every value (CSP `default-src 'self'`); XSS payloads are
-   displayed as text, never executed.
+1. Las instrucciones viven solo en el mensaje `system`; la pregunta del usuario es un mensaje
+   `user`; el texto derivado de la base de datos aparece solo dentro de bloques de datos delimitados.
+2. Los bloques son `<<DATA nonce=<8 hex> kind=<rows|lookup>>>`, una carga JSON y
+   `<<END DATA nonce=<8 hex>>>`. El nonce es el SHA-256 de la carga, así que un atacante no puede
+   incrustar previamente un terminador válido; cualquier `<<END DATA` o `<<DATA` dentro de una celda
+   se neutraliza. El renderizado es determinista, lo que mantiene reproducibles las cassettes.
+3. Eliminar los controles C0/C1 (salvo salto de línea y tabulador), las anulaciones bidireccionales,
+   los caracteres de ancho cero y el BOM.
+4. Truncar las celdas a 200 caracteres (incluido el marcador de advertencia) y las cargas a 20 filas
+   para la narración y a 10 valores para las búsquedas.
+5. Marcar, sin borrar, las celdas que coincidan con los patrones de inyección ES/EN, añadiendo
+   `⟦flagged⟧` y contando la coincidencia. El conteo se expone en la traza del agente y la interfaz
+   muestra una insignia; borrar el texto ocultaría el intento y cambiaría lo que ve el modelo de
+   maneras más difíciles de explicar.
+6. El agente nunca ejecuta texto derivado de los datos: el SQL solo proviene de las acciones
+   `final_sql` o de reparación, y siempre pasa por `SqlPolicy` antes de ejecutarse.
+7. La interfaz web aplica autoescape a cada valor (CSP `default-src 'self'`); las cargas XSS se
+   muestran como texto, nunca se ejecutan.
 
-## Consequences
+## Consecuencias
 
-- A poisoned row can at worst influence the wording of the answer, and the attempt is
-  visible in the trace; it cannot change the SQL shape, trigger extra tool calls beyond
-  the hard limits, or alter the output schema.
-- Deterministic rendering keeps the recorded-output regression gate meaningful: the same
-  warehouse rows produce the same prompt bytes.
-- Truncation and row caps bound prompt size and cost, at the price of the model not
-  seeing every row of a large result. Narration is a summary, not an exhaustive report.
-- Pattern flagging is heuristic and intentionally conservative; false positives are
-  possible (the marker is visible and the original text is retained). The validator, not
-  the flagger, remains the security boundary.
-- The nonce is a content hash, not a secret. It prevents delimiter forgery, not
-  deliberate collision attacks, which are irrelevant to this local tool.
+- Una fila envenenada puede, en el peor caso, influir en la redacción de la respuesta, y el intento
+  queda visible en la traza; no puede cambiar la forma del SQL, provocar llamadas adicionales a
+  herramientas más allá de los límites estrictos ni alterar el esquema de salida.
+- El renderizado determinista mantiene significativa la puerta de regresión sobre las salidas
+  grabadas: las mismas filas del almacén producen los mismos bytes de prompt.
+- El truncado y los topes de filas acotan el tamaño y el costo del prompt, a costa de que el modelo
+  no vea todas las filas de un resultado grande. La narración es un resumen, no un informe
+  exhaustivo.
+- La marcación por patrones es heurística y deliberadamente conservadora; son posibles falsos
+  positivos (el marcador es visible y el texto original se conserva). El validador, no el marcador,
+  sigue siendo la frontera de seguridad.
+- El nonce es un hash de contenido, no un secreto. Evita la falsificación de delimitadores, no los
+  ataques de colisión deliberados, que son irrelevantes para esta herramienta local.
 
-## Alternatives considered
+## Alternativas consideradas
 
-- **Trusting the model to ignore data instructions:** rejected; this is the exact attack
-  the feature must withstand.
-- **Escaping/removing all punctuation or instruction-like words:** rejected because it
-  destroys legitimate Spanish text and hides attacks instead of surfacing them.
-- **Separate LLM call to classify every value:** rejected as slow, expensive and
-  unreliable on a local 7–8B model; a deterministic sanitiser is testable and auditable.
-- **HTML escaping inside the sanitiser:** rejected because the sanitiser feeds prompts,
-  not HTML. The template layer owns HTML escaping and has its own XSS test.
+- **Confiar en que el modelo ignore las instrucciones de los datos:** rechazada; es exactamente el
+  ataque que la funcionalidad debe soportar.
+- **Escapar o eliminar toda la puntuación o las palabras con apariencia de instrucción:** rechazada
+  porque destruye texto español legítimo y oculta los ataques en lugar de mostrarlos.
+- **Una llamada separada al LLM para clasificar cada valor:** rechazada por lenta, costosa y poco
+  fiable en un modelo local de 7–8B; un sanitizador determinista es comprobable y auditable.
+- **Escapar HTML dentro del sanitizador:** rechazada porque el sanitizador alimenta prompts, no HTML.
+  La capa de plantillas se encarga del escape HTML y tiene su propia prueba de XSS.

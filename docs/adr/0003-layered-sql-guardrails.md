@@ -1,64 +1,74 @@
-# ADR-0003: Layered SQL guardrails with an AST allowlist
+# ADR-0003: Guardarraíles SQL por capas con una lista blanca de AST
 
-- **Status:** Accepted
-- **Date:** 2026-11-20
-- **Deciders:** Eduardo Pacheco
+- **Estado:** Aceptada
+- **Fecha:** 2026-11-20
+- **Decisores:** Eduardo Pacheco
 
-## Context
+## Contexto
 
-The agent turns natural-language questions into SQL and executes the result against a
-local DuckDB warehouse. Local models make mistakes and prompt-injected data can try to
-steer the model towards writes, file access or resource exhaustion. The warehouse is
-read-only, but a single `read_csv('/etc/passwd')`, `COPY ... TO`, `ATTACH` or pathological
-cross join would still be unacceptable in a desktop tool that claims to be safe.
+El agente convierte preguntas en lenguaje natural en SQL y ejecuta el resultado contra un
+almacén DuckDB local. Los modelos locales cometen errores, y los datos con inyección de prompts
+pueden intentar llevar al modelo hacia escrituras, acceso a archivos o agotamiento de recursos.
+El almacén es de solo lectura, pero un único `read_csv('/etc/passwd')`, un `COPY ... TO`, un
+`ATTACH` o un producto cartesiano patológico seguirían siendo inaceptables en una herramienta de
+escritorio que se presenta como segura.
 
-Text-level filters and prompt instructions are not an execution boundary: the model can
-be wrong or manipulated, and the connection must not rely on the model's goodwill.
+Los filtros a nivel de texto y las instrucciones del prompt no son una frontera de ejecución: el
+modelo puede equivocarse o ser manipulado, y la conexión no debe depender de la buena voluntad
+del modelo.
 
-## Decision
+## Decisión
 
-Use **defence in depth** with four independent layers:
+Usar **defensa en profundidad** con cuatro capas independientes:
 
-1. **Prompt rules** explain the DuckDB dialect, read-only scope and the JSON protocol.
-   They improve the model's odds but are never trusted.
-2. **`SqlPolicy`** parses every statement with sqlglot (dialect `duckdb`) and applies an
-   ordered chain of responsibility: length, single-statement parse, SELECT-only root,
-   node allowlist, function allowlist, catalog/CTE table allowlist, complexity bounds and
-   an AST-level `LIMIT` rewrite. Unknown nodes, functions or tables are rejected; the
-   SQL that runs is regenerated from the validated AST (comments dropped), so parser
-   quirks cannot smuggle a second interpretation.
-3. **`ValidatedQuery`** is a frozen type constructible only by `SqlPolicy.validate`. The
-   warehouse port accepts that type, making "this SQL passed the guardrail" a type-level
-   property (parse, don't validate).
-4. **A locked read-only DuckDB connection** (`read_only=True`, external access disabled,
-   extension autoload off, memory/thread limits) plus a watchdog timeout and a row cap.
+1. **Reglas del prompt** explican el dialecto de DuckDB, el alcance de solo lectura y el
+   protocolo JSON. Mejoran las probabilidades del modelo, pero nunca se confía en ellas.
+2. **`SqlPolicy`** analiza cada sentencia con sqlglot (dialecto `duckdb`) y aplica una cadena
+   ordenada de responsabilidad: longitud, análisis de una sola sentencia, raíz solo SELECT, lista
+   blanca de nodos, lista blanca de funciones, lista blanca de tablas del catálogo o de CTE,
+   límites de complejidad y una reescritura de `LIMIT` a nivel de AST. Los nodos, funciones o
+   tablas desconocidos se rechazan; el SQL que se ejecuta se regenera a partir del AST validado
+   (sin comentarios), de modo que las peculiaridades del analizador no puedan introducir una
+   segunda interpretación.
+3. **`ValidatedQuery`** es un tipo inmutable que solo puede construir `SqlPolicy.validate`. El
+   puerto del almacén acepta ese tipo, de modo que «este SQL pasó el guardarraíl» sea una
+   propiedad a nivel de tipos (analizar, no validar: *parse, don't validate*).
+4. **Una conexión de DuckDB bloqueada y de solo lectura** (`read_only=True`, acceso externo
+   deshabilitado, carga automática de extensiones desactivada, límites de memoria e hilos), además
+   de un tiempo de espera de vigilancia y un tope de filas.
 
-Rejections carry a stable `GuardrailCode`. Write/DDL/file-intent codes are refused
-without repair; repairable violations (for example an unknown column) can be sent back to
-the model with the error text. The adversarial and legitimate SQL corpora, the fuzz
-property and the pinned sqlglot-behaviour test keep the policy honest across upgrades.
+Los rechazos llevan un `GuardrailCode` estable. Los códigos de escritura, DDL o intención de
+acceso a archivos se rechazan sin reparación; las violaciones reparables (por ejemplo, una
+columna desconocida) pueden devolverse al modelo con el texto del error. Los corpus de SQL
+adversarial y legítimo, la propiedad de fuzzing y la prueba de comportamiento fijado de sqlglot
+mantienen honesta la política a través de las actualizaciones.
 
-## Consequences
+## Consecuencias
 
-- A poisoned data value cannot cause a non-SELECT execution or file access, even when a
-  scripted "obedient" model follows the injection; the AST policy is the real boundary.
-- The policy is deterministic and fast (sub-20 ms p95 on the analytic corpus), so it can
-  run on every attempt without a measurable latency cost.
-- The allowlist is deliberately conservative: a new analytical function or SQL construct
-  must be added with a test and a decision, rather than being accepted implicitly.
-- sqlglot major upgrades may change AST shapes; a pinned-behaviour test fails loudly and
-  forces an explicit review instead of silently widening or breaking the policy.
-- Some legitimate DuckDB features (table functions, `PIVOT`, `UNNEST` outside CTEs,
-  sampling, locking reads) are unavailable to the agent. They are not needed for the
-  benchmark, and the restriction is documented.
+- Un valor de datos envenenado no puede provocar la ejecución de algo que no sea SELECT ni el
+  acceso a archivos, incluso cuando un modelo «obediente» simulado sigue la inyección; la política
+  de AST es la frontera real.
+- La política es determinista y rápida (p95 inferior a 20 ms en el corpus analítico), así que puede
+  ejecutarse en cada intento sin un costo de latencia medible.
+- La lista blanca es deliberadamente conservadora: una nueva función analítica o construcción SQL
+  debe añadirse con una prueba y una decisión, en lugar de aceptarse de forma implícita.
+- Las actualizaciones mayores de sqlglot pueden cambiar las formas del AST; una prueba de
+  comportamiento fijado falla de forma ruidosa y exige una revisión explícita, en lugar de ampliar
+  o romper la política en silencio.
+- Algunas funciones legítimas de DuckDB (funciones de tabla, `PIVOT`, `UNNEST` fuera de CTE,
+  muestreo, lecturas con bloqueo) no están disponibles para el agente. No se necesitan para el
+  benchmark y la restricción está documentada.
 
-## Alternatives considered
+## Alternativas consideradas
 
-- **Prompt-only safety:** rejected; instructions are not an execution boundary.
-- **Regex/keyword blocklists:** rejected because SQL is context-sensitive and keyword
-  lists are trivially bypassed with comments, casing or alternate syntax.
-- **Running arbitrary SQL and relying on the read-only connection:** rejected because
-  read-only does not prevent file reads, extension installs, huge cross joins or
-  information-schema probing.
-- **A separate SQL parser/proxy:** rejected as an unnecessary dependency; sqlglot is
-  already required for dialect-aware regeneration and the benchmark's table extraction.
+- **Seguridad solo mediante el prompt:** rechazada; las instrucciones no son una frontera de
+  ejecución.
+- **Listas negras con expresiones regulares o palabras clave:** rechazadas porque SQL depende del
+  contexto y las listas de palabras clave se eluden con facilidad mediante comentarios,
+  mayúsculas o sintaxis alternativa.
+- **Ejecutar SQL arbitrario y confiar en la conexión de solo lectura:** rechazada porque la
+  solo lectura no impide leer archivos, instalar extensiones, producir productos cartesianos
+  enormes ni consultar el esquema de información.
+- **Un analizador o proxy SQL separado:** rechazado como dependencia innecesaria; sqlglot ya es
+  necesario para la regeneración consciente del dialecto y para la extracción de tablas del
+  benchmark.

@@ -1,24 +1,25 @@
-# ADR-0000: Template
+# ADR-0000: Plantilla
 
-- **Status:** Proposed
-- **Date:** YYYY-MM-DD
-- **Deciders:** Eduardo Pacheco
+- **Estado:** Propuesta
+- **Fecha:** AAAA-MM-DD
+- **Decisores:** Eduardo Pacheco
 
-## Context
+## Contexto
 
-What is the problem or force that motivates this decision? List constraints and the
-options that were realistically available.
+¿Qué problema o qué fuerza motiva esta decisión? Enumera las restricciones y las opciones
+que estaban disponibles de forma realista.
 
-## Decision
+## Decisión
 
-What did we choose, precisely? Include enough detail that a new contributor can apply
-the decision without re-litigating it.
+¿Qué elegimos, con precisión? Incluye suficiente detalle para que un nuevo colaborador pueda
+aplicar la decisión sin volver a discutirla.
 
-## Consequences
+## Consecuencias
 
-What becomes easier, and what becomes harder? Include costs, risks and follow-up work.
+¿Qué se vuelve más fácil y qué se vuelve más difícil? Incluye costos, riesgos y trabajo de
+seguimiento.
 
-## Alternatives considered
+## Alternativas consideradas
 
-Which alternatives were rejected and why? Keep the evidence (measurements, links,
-version numbers) that made the choice defensible.
+¿Qué alternativas se rechazaron y por qué? Conserva la evidencia (mediciones, enlaces,
+números de versión) que hizo defendible la elección.

@@ -27,7 +27,7 @@ MANIFEST = ROOT / "src" / "sqlagent" / "resources" / "warehouse" / "MANIFEST.jso
 LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 HEADING_RE = re.compile(r"^##\s+\S", re.MULTILINE)
 REQUIRED_ADRS = tuple(range(1, 10))
-ADR_SECTIONS = ("Context", "Decision", "Consequences", "Alternatives considered")
+ADR_SECTIONS = ("Contexto", "Decisión", "Consecuencias", "Alternativas consideradas")
 
 SCREENSHOTS = ("hero-light.png", "hero-dark.png", "answer-chart.png", "empty-state.png")
 GIF = "demo.gif"

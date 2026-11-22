@@ -4,14 +4,14 @@ The README results table and the ``docs/EVAL.md`` results must be generated from
 a committed ``summary.json`` so no number is ever typed by hand.  This script
 emits the canonical Markdown block that sits between the
 ``<!-- METRICS:START -->`` / ``<!-- METRICS:END -->`` markers in ``README.md`` and
-``README.es.md``, and can verify that the committed copy matches the summary.
+``README.en.md``, and can verify that the committed copy matches the summary.
 
 Usage::
 
     uv run python scripts/render_readme_metrics.py
     uv run python scripts/render_readme_metrics.py --breakdowns
-    uv run python scripts/render_readme_metrics.py --write README.md README.es.md
-    uv run python scripts/render_readme_metrics.py --check README.md README.es.md
+    uv run python scripts/render_readme_metrics.py --write README.md README.en.md
+    uv run python scripts/render_readme_metrics.py --check README.md README.en.md
 """
 
 from __future__ import annotations

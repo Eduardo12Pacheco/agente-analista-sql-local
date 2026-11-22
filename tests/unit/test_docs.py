@@ -1,9 +1,10 @@
 """Documentation acceptance checks (T14/S38).
 
 These tests keep the READMEs, docs and ADRs honest: relative links must
-resolve, the Spanish README mirrors the English section order, every settings
-field is documented, the required ADRs exist and the SERCOP attribution plus
-every committed warehouse checksum appears in ``docs/DATA.md``.
+resolve, the Spanish README (``README.md``) and the English README
+(``README.en.md``) mirror each other's section order, every settings field is
+documented, the required ADRs exist and the SERCOP attribution plus every
+committed warehouse checksum appears in ``docs/DATA.md``.
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ from sqlagent.config import Settings
 
 ROOT = Path(__file__).resolve().parents[2]
 README = ROOT / "README.md"
-README_ES = ROOT / "README.es.md"
+README_EN = ROOT / "README.en.md"
 DOCS = ROOT / "docs"
 ASSETS = DOCS / "assets"
 MANIFEST = ROOT / "src" / "sqlagent" / "resources" / "warehouse" / "MANIFEST.json"
@@ -52,48 +53,73 @@ def _local_targets(document: Path) -> list[str]:
     return targets
 
 
+SPANISH_README_SECTIONS = (
+    "## Qué hace",
+    "## Por qué es interesante",
+    "## Arquitectura",
+    "## Inicio rápido",
+    "## Resultados",
+    "## Datos y atribución",
+    "## Documentación",
+    "## Limitaciones",
+)
+ENGLISH_README_SECTIONS = (
+    "## What it does",
+    "## Why it is interesting",
+    "## Architecture",
+    "## Quickstart",
+    "## Results",
+    "## Data and attribution",
+    "## Documentation",
+    "## Limitations",
+)
+
+
 @pytest.mark.unit
-def test_readme_budget_and_sections() -> None:
-    text = _read(README)
+@pytest.mark.parametrize(
+    ("document", "sections"),
+    [(README, SPANISH_README_SECTIONS), (README_EN, ENGLISH_README_SECTIONS)],
+)
+def test_readme_budget_and_sections(document: Path, sections: tuple[str, ...]) -> None:
+    text = _read(document)
     assert len(text.splitlines()) <= 150
     for marker in ("<!-- METRICS:START -->", "<!-- METRICS:END -->"):
         assert marker in text
-    for section in (
-        "## What it does",
-        "## Why it is interesting",
-        "## Architecture",
-        "## Quickstart",
-        "## Results",
-        "## Data and attribution",
-        "## Documentation",
-        "## Limitations",
-    ):
+    for section in sections:
         assert section in text
 
 
 @pytest.mark.unit
-def test_readme_has_badges_hero_and_media_links() -> None:
-    text = _read(README)
+@pytest.mark.parametrize(
+    ("document", "switcher"),
+    [
+        (README, "**Español** · [English](README.en.md)"),
+        (README_EN, "[Español](README.md) · **English**"),
+    ],
+)
+def test_readme_has_badges_hero_and_media_links(document: Path, switcher: str) -> None:
+    text = _read(document)
     for badge in ("badge.svg", "license-MIT", "python-3.12", "managed%20with-uv"):
         assert badge in text
     assert "docs/assets/demo.gif" in text
     assert "docs/assets/hero-light.png" in text
-    assert "README.es.md" in text
+    assert text.splitlines()[2] == switcher
 
 
 @pytest.mark.unit
-def test_spanish_readme_mirrors_heading_order() -> None:
-    english = _read(README)
-    spanish = _read(README_ES)
+def test_readmes_mirror_heading_order() -> None:
+    spanish = _read(README)
+    english = _read(README_EN)
     assert len(HEADING_RE.findall(spanish)) == len(HEADING_RE.findall(english))
-    assert "# local-sql-analyst-agent" in spanish
-    for marker in ("<!-- METRICS:START -->", "<!-- METRICS:END -->"):
-        assert marker in spanish
-    assert "SERCOP" in spanish
+    for text in (spanish, english):
+        assert "# local-sql-analyst-agent" in text
+        for marker in ("<!-- METRICS:START -->", "<!-- METRICS:END -->"):
+            assert marker in text
+        assert "SERCOP" in text
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize("document", [README, README_ES])
+@pytest.mark.parametrize("document", [README, README_EN])
 def test_relative_links_and_images_resolve(document: Path) -> None:
     missing = [target for target in _local_targets(document) if not (ROOT / target).exists()]
     assert missing == []
@@ -161,14 +187,28 @@ def test_screenshots_and_gif_are_committed() -> None:
 
 @pytest.mark.unit
 def test_no_owner_home_paths_in_public_docs() -> None:
-    public = [README, README_ES, *DOCS.rglob("*.md"), ROOT / "CONTRIBUTING.md"]
+    public = [README, README_EN, *DOCS.rglob("*.md"), ROOT / "CONTRIBUTING.md"]
     offenders = [str(path.relative_to(ROOT)) for path in public if "/home/" in _read(path)]
     assert offenders == []
 
 
 @pytest.mark.unit
-def test_limitations_are_honest() -> None:
-    text = _read(README)
-    limitations = text.split("## Limitations", 1)[1]
-    for phrase in ("single warehouse", "n = 72", "wide", "lexical", "one machine"):
+@pytest.mark.parametrize(
+    ("document", "heading", "phrases"),
+    [
+        (
+            README,
+            "## Limitaciones",
+            ("un solo almacén", "n = 72", "amplios", "léxica", "una sola máquina"),
+        ),
+        (
+            README_EN,
+            "## Limitations",
+            ("single warehouse", "n = 72", "wide", "lexical", "one machine"),
+        ),
+    ],
+)
+def test_limitations_are_honest(document: Path, heading: str, phrases: tuple[str, ...]) -> None:
+    limitations = _read(document).split(heading, 1)[1]
+    for phrase in phrases:
         assert phrase.lower() in limitations.lower(), phrase

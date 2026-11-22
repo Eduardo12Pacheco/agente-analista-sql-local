@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400" role="img" aria-labelledby="hero-title hero-desc">
+  <title id="hero-title">agente-analista-sql-local</title>
+  <desc id="hero-desc">Local AI data analyst that answers Spanish or English questions about Ecuadorian public procurement data. Its path is understand, retrieve, generate SQL, validate, execute, chart and narrate.</desc>
+
+  <rect x="1" y="1" width="1198" height="398" rx="24" fill="#f7f7f5" stroke="#d9dce1" stroke-width="2"/>
+
+  <g id="identity" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+    <text x="64" y="88" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="20" font-weight="700" letter-spacing="2" fill="#0b5cad">LOCAL AI DATA ANALYST</text>
+    <text x="64" y="166" font-size="62" font-weight="700" fill="#1b1f24">agente-analista-sql-local</text>
+    <text x="64" y="222" font-size="28" fill="#565d66">Ask in Spanish or English about Ecuadorian public procurement data.</text>
+    <text x="64" y="260" font-size="28" fill="#565d66">Get the answer, the SQL, a table and a chart. Everything runs on your machine.</text>
+  </g>
+
+  <g id="agent-rail" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+    <line x1="120" y1="312" x2="1080" y2="312" stroke="#d9dce1" stroke-width="4" stroke-linecap="round"/>
+    <g fill="#0b5cad">
+      <circle cx="120" cy="312" r="10"/>
+      <circle cx="280" cy="312" r="10"/>
+      <circle cx="440" cy="312" r="10"/>
+      <circle cx="600" cy="312" r="10"/>
+      <circle cx="760" cy="312" r="10"/>
+      <circle cx="920" cy="312" r="10"/>
+      <circle cx="1080" cy="312" r="10"/>
+    </g>
+    <g font-size="20" font-weight="600" fill="#1b1f24" text-anchor="middle">
+      <text x="120" y="356">Understand</text>
+      <text x="280" y="356">Retrieve</text>
+      <text x="440" y="356">Generate SQL</text>
+      <text x="600" y="356">Validate</text>
+      <text x="760" y="356">Execute</text>
+      <text x="920" y="356">Chart</text>
+      <text x="1080" y="356">Narrate</text>
+    </g>
+  </g>
+</svg>

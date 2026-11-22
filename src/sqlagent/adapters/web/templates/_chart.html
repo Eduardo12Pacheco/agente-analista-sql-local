@@ -3,7 +3,7 @@
 <figure class="chart-block">
   <div class="block-head">
     <h3>{{ t("chart_title") }}</h3>
-    <span class="muted">{{ t("chart_why") }}: {{ spec.reason }}</span>
+    <span class="muted">{{ t("chart_why") }}: {{ t("chart_reason_" ~ spec.reason) }}</span>
   </div>
   {% if spec.kind == "kpi" %}
   <p class="kpi-value">{{ kpi_value if kpi_value is defined else "—" }}</p>
@@ -12,7 +12,7 @@
     <canvas role="img" aria-label="{{ t('chart_aria') }}"></canvas>
   </div>
   {% endif %}
-  <figcaption class="sr-only">{{ spec.title }} · {{ spec.reason }}</figcaption>
+  <figcaption class="sr-only">{{ spec.title }} · {{ t("chart_reason_" ~ spec.reason) }}</figcaption>
   {% if spec.kind != "kpi" %}
   <details class="chart-fallback">
     <summary>{{ t("chart_fallback") }}</summary>

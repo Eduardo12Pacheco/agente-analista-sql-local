@@ -112,7 +112,7 @@ def test_readmes_mirror_heading_order() -> None:
     english = _read(README_EN)
     assert len(HEADING_RE.findall(spanish)) == len(HEADING_RE.findall(english))
     for text in (spanish, english):
-        assert "# local-sql-analyst-agent" in text
+        assert "# agente-analista-sql-local" in text
         for marker in ("<!-- METRICS:START -->", "<!-- METRICS:END -->"):
             assert marker in text
         assert "SERCOP" in text

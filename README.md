@@ -1,4 +1,4 @@
-# local-sql-analyst-agent
+# agente-analista-sql-local
 
 **Español** · [English](README.en.md)
 

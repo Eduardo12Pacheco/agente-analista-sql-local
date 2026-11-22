@@ -1,34 +1,34 @@
-# Data: SERCOP Ecuador OCDS 2021
+# Datos: SERCOP Ecuador OCDS 2021
 
-The bundled warehouse is a filtered, normalised and pseudonymised extract of the
-Ecuadorian public-procurement system (SERCOP) for 2021. It ships as six Parquet
-files plus `MANIFEST.json` inside the wheel, so the application works offline on
-first run.
+El almacén incluido es un extracto filtrado, normalizado y pseudonimizado del sistema de compras
+públicas de Ecuador (SERCOP) de 2021. Se distribuye como seis archivos Parquet más
+`MANIFEST.json` dentro del wheel, así que la aplicación funciona sin conexión en la primera
+ejecución.
 
-> Contains data from SERCOP, Ecuador (https://datosabiertos.compraspublicas.gob.ec),
-> CC BY 3.0 EC; filtered, normalised, pseudonymised.
+> Contiene datos del SERCOP, Ecuador (https://datosabiertos.compraspublicas.gob.ec),
+> CC BY 3.0 EC; filtrados, normalizados, pseudonimizados.
 
-## Source and licence
+## Fuente y licencia
 
-| Field | Value |
+| Campo | Valor |
 |---|---|
-| Publisher | Servicio Nacional de Contratación Pública (SERCOP), Ecuador |
-| Dataset | OCDS bulk data, CSV flavour, year 2021 |
-| Distribution | Open Contracting Partnership Data Registry, publication 110 |
+| Editor | Servicio Nacional de Contratación Pública (SERCOP), Ecuador |
+| Conjunto de datos | Datos masivos OCDS, variante CSV, año 2021 |
+| Distribución | Open Contracting Partnership Data Registry, publicación 110 |
 | URL | https://data.open-contracting.org/en/publication/110/download?name=2021.csv.tar.gz |
-| Licence | CC BY 3.0 Ecuador — https://creativecommons.org/licenses/by/3.0/ec/ |
-| Attribution link | https://datosabiertos.compraspublicas.gob.ec |
-| Tarball SHA-256 | `e1fbc3c855a4c85f2077542cbce977ab5ac882fc11744f7042bc81d5a8f426fe` |
+| Licencia | CC BY 3.0 Ecuador — https://creativecommons.org/licenses/by/3.0/ec/ |
+| Enlace de atribución | https://datosabiertos.compraspublicas.gob.ec |
+| SHA-256 del tarball | `e1fbc3c855a4c85f2077542cbce977ab5ac882fc11744f7042bc81d5a8f426fe` |
 
-The publisher's publication policy (section 6) allows use and republication for
-any purpose provided a link to the original source is included. The policy also
-excludes phone numbers, supplier size and the SIE reference budget; this bundle
-does not contain those fields.
+La política de publicación del editor (sección 6) permite el uso y la redistribución con
+cualquier fin, siempre que se incluya un enlace a la fuente original. La política también excluye
+los números de teléfono, el tamaño del proveedor y el presupuesto de referencia SIE; este paquete
+no contiene esos campos.
 
-The tarball is regenerated upstream from time to time, so the reproducible pin
-is the SHA-256 of the six consumed CSV members:
+El tarball se regenera en el origen de vez en cuando, así que el fijado reproducible es el SHA-256
+de los seis miembros CSV consumidos:
 
-| Member | CSV records | SHA-256 |
+| Miembro | Registros CSV | SHA-256 |
 |---|---:|---|
 | `main.csv` | 122,277 | `eb3c05fdf955dbd3879e372f3e6ce54f7f8b199efd45bb355d754aeba3e53f00` |
 | `awards.csv` | 121,736 | `2622dbe34c5ab30a6b93de76b817884ad19484ee6557957faf8e73897beefe4d` |
@@ -37,9 +37,9 @@ is the SHA-256 of the six consumed CSV members:
 | `parties.csv` | 293,287 | `5da114e85818189bc63b623b6fd2863443247f6097726e72d065054db0cc0da8` |
 | `tender_items.csv` | 49,628 | `0844e18c3d1e7b15bbfb63609d1ba83d059c6eab44d83546802803c7a5ae0fe8` |
 
-## Bundle
+## Paquete
 
-| Table | Rows | Parquet SHA-256 |
+| Tabla | Filas | SHA-256 del Parquet |
 |---|---:|---|
 | `buyers` | 2,641 | `66f7e1f6cde4f95ee205fd91936fa8c367bf8f7c2d4557c2ef1894234f8f49d0` |
 | `suppliers` | 10,217 | `e054a56a78f9a0cbe84f6e069b7b37d6e0b89d8797ad5689111dce9e4d64e95a` |
@@ -48,13 +48,13 @@ is the SHA-256 of the six consumed CSV members:
 | `contracts` | 117,492 | `f64cb7185bd8845fa0ab4e9e79055cd0a6b3f1c4dd30449287190044a5a29936` |
 | `tender_items` | 49,628 | `d4317aac062ab31d1258a57529ca602c5e7a3d771594a510f509ad30bb40460a` |
 
-Total Parquet size is about 4.3 MB (well under the 8 MB budget). Every file is
-zstd level 19, written from a single-threaded DuckDB session and ordered by its
-key so rebuilds are reproducible. `MANIFEST.json` additionally records row
-counts and fingerprints (sum of the monetary column in cents and distinct key
-count); `sqlagent data verify` recomputes all of them.
+El tamaño total de los Parquet es de unos 4.3 MB (muy por debajo del presupuesto de 8 MB). Cada
+archivo usa zstd nivel 19, se escribe desde una sesión de DuckDB de un solo hilo y se ordena por su
+clave para que las reconstrucciones sean reproducibles. `MANIFEST.json` además registra los conteos
+de filas y las huellas (suma de la columna monetaria en centavos y conteo de claves distintas);
+`sqlagent data verify` recalcula todos ellos.
 
-## Lineage
+## Linaje
 
 ```mermaid
 flowchart LR
@@ -85,7 +85,7 @@ flowchart LR
   IT --> D
 ```
 
-## Schema
+## Esquema
 
 ```
 buyers(buyer_id PK, buyer_name, province, canton)
@@ -101,85 +101,84 @@ tender_items(item_id PK, tender_id FK→tenders, description, quantity, unit_nam
              unit_price_usd, cpc_code, cpc_description)
 ```
 
-Parquet carries no constraints. On first use the materialiser creates a
-read-only DuckDB database in the user data directory with primary and foreign
-keys declared; a test checks there are no orphan rows.
+Parquet no incluye restricciones. En el primer uso, el materializador crea en el directorio de
+datos del usuario una base de datos DuckDB de solo lectura con las claves primarias y foráneas
+declaradas; una prueba comprueba que no haya filas huérfanas.
 
-## ETL rules
+## Reglas del ETL
 
-1. Read all six CSVs as `VARCHAR` (`all_varchar=true`, `sample_size=-1`).
-2. Keep only `main` rows with a non-NULL `tender_status` (drops 1,205
-   planning-only releases).
-3. Normalise every string: trim and collapse whitespace runs to one space.
-4. `tenders.tender_id` is the OCDS `ocid`; `process_code` is the two
-   dash-separated tokens after the `ocds-<publisher>-` prefix
-   (`ocds-5wno2w-CE-20210001947751-115480` → `CE-20210001947751`).
-5. `buyer_id` is the 13-digit RUC extracted from `EC-RUC-…`; buyer
-   province/canton come from the buyer `parties` row.
-6. `procurement_type` is a closed mapping: Catálogo electrónico →
-   `catalogo_electronico`; Subasta Inversa Electrónica → `subasta_inversa`;
-   Menor Cuantía → `menor_cuantia`; Cotización → `cotizacion`; the three direct
-   contracting variants → `contratacion_directa`; Contratos entre Entidades
-   Públicas → `entre_entidades_publicas`; anything else → `otros`.
-7. Supplier kind follows the third RUC digit: 0–5 natural person, 6 public
-   entity, 9 company, otherwise other.
-8. Awards are restricted to retained tenders and joined to one supplier row;
-   contracts are `SELECT DISTINCT` over the projected columns; items and
-   contracts follow their retained tender.
-9. Every table is ordered by its key and written with zstd level 19.
-10. The manifest stores the source URL, member hashes and rows, table hashes,
-    rows, fingerprints, tool versions and the build timestamp.
+1. Lee los seis CSV como `VARCHAR` (`all_varchar=true`, `sample_size=-1`).
+2. Conserva solo las filas de `main` con un `tender_status` no NULL (descarta 1,205 publicaciones
+   solo de planificación).
+3. Normaliza cada cadena: recorta los espacios y reduce cada secuencia de espacios a uno.
+4. `tenders.tender_id` es el `ocid` de OCDS; `process_code` son los dos tokens separados por
+   guiones que siguen al prefijo `ocds-<publisher>-` (`ocds-5wno2w-CE-20210001947751-115480` →
+   `CE-20210001947751`).
+5. `buyer_id` es el RUC de 13 dígitos extraído de `EC-RUC-…`; la provincia y el cantón del
+   comprador provienen de su fila en `parties`.
+6. `procurement_type` es un mapeo cerrado: Catálogo electrónico → `catalogo_electronico`;
+   Subasta Inversa Electrónica → `subasta_inversa`; Menor Cuantía → `menor_cuantia`; Cotización →
+   `cotizacion`; las tres variantes de contratación directa → `contratacion_directa`; Contratos
+   entre Entidades Públicas → `entre_entidades_publicas`; cualquier otro valor → `otros`.
+7. El tipo de proveedor sigue al tercer dígito del RUC: 0–5 persona natural, 6 entidad pública,
+   9 empresa; en otro caso, otro.
+8. Las adjudicaciones se restringen a las licitaciones retenidas y se unen a una única fila de
+   proveedor; los contratos son `SELECT DISTINCT` sobre las columnas proyectadas; los ítems y los
+   contratos siguen a su licitación retenida.
+9. Cada tabla se ordena por su clave y se escribe con zstd nivel 19.
+10. El manifiesto guarda la URL de origen, los hashes y las filas de los miembros, los hashes, las
+    filas, las huellas de las tablas, las versiones de las herramientas y la marca de tiempo de
+    construcción.
 
-## Privacy
+## Privacidad
 
-* 6,086 natural-person suppliers (third RUC digit 0–5) are pseudonymised
-  deterministically: `PN-000001`, `PN-000002`, … in RUC order, with the display
-  name `Persona natural PN-000001`. Province and canton are kept for aggregate
-  analysis. No natural-person name or RUC is present in the bundle.
-* 96 legacy supplier identifiers in the source lack the `EC-RUC-` prefix (they
-  start with `ID-` and mix cedula/RUC-like numbers). Their awards are linked to
-  a single `ID-UNKNOWN` supplier of kind `other`, with a neutral name. This
-  avoids publishing unverifiable identifiers and keeps the pinned 10,217-row
-  supplier contract and all award foreign keys intact.
-* A test scans every `VARCHAR` column of the committed Parquet for natural-person
-  RUCs and checks every `natural_person` name has the `Persona natural PN-`
-  prefix. The scan's boundary deliberately ignores hyphen-delimited OCDS process
-  codes, which contain 13-digit runs that are not RUCs.
-* Free-text fields are truncated (`description` 240, item description 160, CPC
-  description 120) to keep prompts and the bundle bounded.
+* 6,086 proveedores personas naturales (tercer dígito del RUC 0–5) se pseudonimizan de forma
+  determinista: `PN-000001`, `PN-000002`, … en orden de RUC, con el nombre visible
+  `Persona natural PN-000001`. La provincia y el cantón se conservan para el análisis agregado. El
+  paquete no contiene ningún nombre ni RUC de persona natural.
+* 96 identificadores heredados de proveedor en el origen carecen del prefijo `EC-RUC-` (empiezan
+  con `ID-` y mezclan números con formato de cédula y de RUC). Sus adjudicaciones se vinculan a un
+  único proveedor `ID-UNKNOWN` de tipo `other`, con un nombre neutro. Así se evita publicar
+  identificadores no verificables y se mantienen intactos el contrato del proveedor fijado de
+  10,217 filas y todas las claves foráneas de adjudicación.
+* Una prueba recorre cada columna `VARCHAR` de los Parquet confirmados buscando RUC de personas
+  naturales y comprueba que cada nombre `natural_person` tenga el prefijo `Persona natural PN-`. El
+  límite del escaneo ignora deliberadamente los códigos de proceso de OCDS separados por guiones,
+  que contienen secuencias de 13 dígitos que no son RUC.
+* Los campos de texto libre se truncan (`description` 240, descripción del ítem 160, descripción
+  CPC 120) para mantener acotados los prompts y el paquete.
 
-## Quirks
+## Particularidades
 
-* There are no tenders released in June 2021; only 216 were released in November
-  2021.
-* `contracts.signed_date` is NULL for about 90% of contracts; use
-  `tenders.release_date` for temporal analysis.
-* `planned_amount_usd` is NULL for all Subasta Inversa rows (SERCOP excludes
-  that budget by policy) and electronic-catalogue purchases often have no
-  contract value; use `awards.amount_usd` for spend.
-* About 87% of tenders are electronic-catalogue micro-purchases; the median
-  planned amount is about 62 USD.
-* `contracts` has repeated source ids; it is intentionally deduplicated and has
-  no primary key.
-* Source values are Spanish (`goods` maps to `bienes`, `works` to `obras`, …).
+* No hay licitaciones publicadas en junio de 2021; en noviembre de 2021 solo se publicaron 216.
+* `contracts.signed_date` es NULL en alrededor del 90% de los contratos; usa
+  `tenders.release_date` para el análisis temporal.
+* `planned_amount_usd` es NULL en todas las filas de Subasta Inversa (SERCOP excluye ese
+  presupuesto por política), y las compras por catálogo electrónico con frecuencia no tienen valor
+  de contrato; usa `awards.amount_usd` para el gasto.
+* Alrededor del 87% de las licitaciones son micro-compras por catálogo electrónico; la mediana del
+  monto planificado es de unos 62 USD.
+* `contracts` tiene identificadores de origen repetidos; se deduplica de forma intencional y no
+  tiene clave primaria.
+* Los valores de origen están en español (`goods` se asigna a `bienes`, `works` a `obras`, …).
 
-## Rebuild
+## Reconstrucción
 
-The committed bundle is the source of truth. To rebuild it from the pinned
-upstream CSVs:
+El paquete confirmado es la fuente de verdad. Para reconstruirlo a partir de los CSV de origen
+fijados:
 
 ```bash
 uv run sqlagent data build --year 2021 --out src/sqlagent/resources/warehouse
 uv run sqlagent data verify
 ```
 
-`data build` downloads the tarball, verifies the six member hashes and writes
-the Parquet files plus `MANIFEST.json`. If upstream regenerated the archive and
-the member hashes changed, review the diff and use `--allow-checksum-drift`;
-the new hashes are then recorded in the manifest (and should be copied here and
-into the plan). Tests and benchmarks never need the network.
+`data build` descarga el tarball, verifica los hashes de los seis miembros y escribe los archivos
+Parquet más `MANIFEST.json`. Si el origen regeneró el archivo y los hashes de los miembros
+cambiaron, revisa la diferencia y usa `--allow-checksum-drift`; los nuevos hashes quedan registrados
+en el manifiesto (y deben copiarse aquí y al plan). Las pruebas y los benchmarks nunca necesitan
+la red.
 
-To inspect the bundle without materialising a database:
+Para inspeccionar el paquete sin materializar una base de datos:
 
 ```bash
 uv run sqlagent data info

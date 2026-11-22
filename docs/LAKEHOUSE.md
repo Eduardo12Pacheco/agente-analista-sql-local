@@ -1,16 +1,16 @@
-# External lakehouse adapter
+# Adaptador de lakehouse externo
 
-`sqlagent` normally answers questions over its bundled SERCOP warehouse. With a
-**lakehouse manifest** it can instead read a DuckDB file produced by another
-local project, with the same locked, read-only connection, SQL policy and agent
-loop. The adapter is optional and has no runtime dependency on the producing
-project: the manifest is a plain JSON file with a documented, versioned schema.
+`sqlagent` normalmente responde preguntas sobre su almacén SERCOP incluido. Con un **manifiesto de
+lakehouse** puede, en cambio, leer un archivo DuckDB producido por otro proyecto local, con la
+misma conexión bloqueada y de solo lectura, la misma política SQL y el mismo ciclo del agente. El
+adaptador es opcional y no tiene ninguna dependencia de ejecución con el proyecto productor: el
+manifiesto es un archivo JSON simple con un esquema documentado y versionado.
 
-- Contract: `sqlagent.lakehouse-manifest/v1`
+- Contrato: `sqlagent.lakehouse-manifest/v1`
 - JSON Schema: [`docs/lakehouse-manifest.schema.json`](lakehouse-manifest.schema.json)
-- Example: [`docs/examples/lakehouse-manifest.example.json`](examples/lakehouse-manifest.example.json)
+- Ejemplo: [`docs/examples/lakehouse-manifest.example.json`](examples/lakehouse-manifest.example.json)
 
-## Quickstart
+## Inicio rápido
 
 ```bash
 # Validate a manifest and inspect its database before asking anything.
@@ -24,67 +24,67 @@ sqlagent ask --manifest /path/to/manifest.json "How many rows are in the sales t
 sqlagent serve --manifest /path/to/manifest.json --port 17080
 ```
 
-The same value can be provided through the environment:
+El mismo valor se puede proporcionar mediante el entorno:
 
 ```bash
 export SQLAGENT_LAKEHOUSE_MANIFEST=/path/to/manifest.json
 sqlagent doctor --offline
 ```
 
-When `--manifest`/`SQLAGENT_LAKEHOUSE_MANIFEST` is set, it replaces the bundled
-Parquet bundle entirely. Exit codes are the usual ones: `2` for an invalid
-configuration/manifest, `3` for a missing or tampered DuckDB file or an
-environment problem, `0` on success.
+Cuando se define `--manifest` o `SQLAGENT_LAKEHOUSE_MANIFEST`, reemplaza por completo al paquete
+Parquet incluido. Los códigos de salida son los habituales: `2` para una configuración o un
+manifiesto no válidos, `3` para un archivo DuckDB ausente o alterado, o un problema del entorno, y
+`0` en caso de éxito.
 
-## Manifest fields
+## Campos del manifiesto
 
-| Field | Type | Required | Meaning |
+| Campo | Tipo | Obligatorio | Significado |
 |---|---|---|---|
-| `schema` | string | yes | Exactly `sqlagent.lakehouse-manifest/v1`. |
-| `name` | string | yes | Human-readable lakehouse name, shown by `doctor`. |
-| `generated_at` | ISO-8601 date-time | yes | When the DB/manifest pair was produced. |
-| `duckdb_file` | relative path | yes | DuckDB file, relative to the manifest directory. Absolute paths and `..` escapes are rejected. |
-| `sha256` | 64 hex chars | yes | SHA-256 of `duckdb_file`; verified before the file is opened. |
-| `tables` | array (≥ 1) | yes | Documented tables, in prompt order. |
-| `tables[].name` | SQL identifier | yes | Table name in the DuckDB file. |
-| `tables[].description` | string | yes | One-line description used in EN and ES prompts. |
-| `tables[].columns` | array (≥ 1) | yes | Documented columns. |
-| `tables[].columns[].name` | SQL identifier | yes | Column name. |
-| `tables[].columns[].type` | string | yes | DuckDB type, e.g. `VARCHAR`, `BIGINT`, `DOUBLE`, `DATE`. |
-| `tables[].columns[].description` | string | yes | One-line description used in EN and ES prompts. |
-| `tables[].columns[].synonyms` | string array | no | Bilingual retrieval terms (default empty). |
-| `tables[].columns[].lookupable` | boolean | no | Allow `lookup_values` on this text column (default `false`). |
-| `tables[].columns[].samples` | string array | no | Low-cardinality sample values for retrieval. |
-| `relationships` | array | no | Join paths as `{"from": "table.column", "to": "table.column"}`. |
-| `language` | `es`, `en`, `multi` | no | Documentation language hint (default `multi`). |
+| `schema` | cadena | sí | Exactamente `sqlagent.lakehouse-manifest/v1`. |
+| `name` | cadena | sí | Nombre legible del lakehouse, mostrado por `doctor`. |
+| `generated_at` | fecha-hora ISO-8601 | sí | Momento en que se produjo el par base de datos/manifiesto. |
+| `duckdb_file` | ruta relativa | sí | Archivo DuckDB, relativo al directorio del manifiesto. Las rutas absolutas y los escapes con `..` se rechazan. |
+| `sha256` | 64 caracteres hex | sí | SHA-256 de `duckdb_file`; se verifica antes de abrir el archivo. |
+| `tables` | arreglo (≥ 1) | sí | Tablas documentadas, en el orden del prompt. |
+| `tables[].name` | identificador SQL | sí | Nombre de la tabla en el archivo DuckDB. |
+| `tables[].description` | cadena | sí | Descripción de una línea usada en los prompts en EN y ES. |
+| `tables[].columns` | arreglo (≥ 1) | sí | Columnas documentadas. |
+| `tables[].columns[].name` | identificador SQL | sí | Nombre de la columna. |
+| `tables[].columns[].type` | cadena | sí | Tipo de DuckDB, p. ej. `VARCHAR`, `BIGINT`, `DOUBLE`, `DATE`. |
+| `tables[].columns[].description` | cadena | sí | Descripción de una línea usada en los prompts en EN y ES. |
+| `tables[].columns[].synonyms` | arreglo de cadenas | no | Términos bilingües de recuperación (por defecto vacío). |
+| `tables[].columns[].lookupable` | booleano | no | Permite `lookup_values` en esta columna de texto (por defecto `false`). |
+| `tables[].columns[].samples` | arreglo de cadenas | no | Valores de muestra de baja cardinalidad para la recuperación. |
+| `relationships` | arreglo | no | Rutas de unión como `{"from": "table.column", "to": "table.column"}`. |
+| `language` | `es`, `en`, `multi` | no | Indicación del idioma de la documentación (por defecto `multi`). |
 
-The manifest is the **only** schema source for an external warehouse: metrics,
-glossary entries and few-shot examples from the bundled resources are disabled,
-because the contract does not carry them.
+El manifiesto es la **única** fuente de esquema para un almacén externo: las métricas, las entradas
+del glosario y los ejemplos few-shot de los recursos incluidos quedan deshabilitados, porque el
+contrato no los incluye.
 
-## How a sibling project emits a manifest
+## Cómo emite un manifiesto un proyecto hermano
 
-1. Write the DuckDB file deterministically (fixed ordering, no timestamps) and
-   close all connections.
-2. Hash it with a tool available on Linux, macOS and Windows. On Linux/macOS:
+1. Escribe el archivo DuckDB de forma determinista (orden fijo, sin marcas de tiempo) y cierra
+   todas las conexiones.
+2. Calcula su hash con una herramienta disponible en Linux, macOS y Windows. En Linux/macOS:
 
    ```bash
    sha256sum warehouse/lakehouse.duckdb
    ```
 
-   On Windows PowerShell:
+   En PowerShell de Windows:
 
    ```powershell
    (Get-FileHash -Algorithm SHA256 warehouse\lakehouse.duckdb).Hash.ToLower()
    ```
 
-   Or from Python, cross-platform:
+   O desde Python, de forma multiplataforma:
 
    ```bash
    python -c "import hashlib,pathlib;print(hashlib.sha256(pathlib.Path('warehouse/lakehouse.duckdb').read_bytes()).hexdigest())"
    ```
 
-3. Generate the JSON file (the example below is also committed as
+3. Genera el archivo JSON (el ejemplo siguiente también está incluido como
    `docs/examples/lakehouse-manifest.example.json`):
 
    ```json
@@ -115,44 +115,43 @@ because the contract does not carry them.
    }
    ```
 
-4. Validate the manifest locally before publishing it: `sqlagent doctor
-   --offline --manifest <path>` prints the manifest name and table count, then
-   opens the database read-only and reports row counts. The bundled test suite
-   validates the committed example and the JSON Schema on every run.
+4. Valida el manifiesto localmente antes de publicarlo: `sqlagent doctor --offline --manifest <ruta>`
+   muestra el nombre del manifiesto y el número de tablas, y después abre la base de datos en solo
+   lectura e informa los conteos de filas. La suite de pruebas incluida valida en cada ejecución el
+   ejemplo confirmado y el JSON Schema.
 
-No other repository is imported at runtime; integration is only through this
-documented artifact. The producer and the consumer can evolve independently as
-long as the `v1` contract is respected.
+No se importa ningún otro repositorio en tiempo de ejecución; la integración se hace únicamente a
+través de este artefacto documentado. El productor y el consumidor pueden evolucionar de forma
+independiente mientras se respete el contrato `v1`.
 
-## Validation and security
+## Validación y seguridad
 
-Before any query runs, the adapter checks:
+Antes de ejecutar cualquier consulta, el adaptador comprueba:
 
-- JSON syntax and the `sqlagent.lakehouse-manifest/v1` schema (pydantic model,
-  `extra="forbid"`), with readable `ConfigError` messages;
-- `duckdb_file` is relative, does not escape the manifest directory and exists;
-- the file SHA-256 equals `sha256`; a mismatch aborts with
-  `lakehouse SHA-256 mismatch: manifest expects …, file has …` and CLI exit 3;
-- no table uses a reserved system name (`information_schema`, `sqlite_master`,
-  or any `duckdb_*` / `pg_*` catalog name);
-- every documented table exists in the file, and every documented column exists
-  with the declared type (missing/typed-differently columns are rejected);
-- the manifest table allowlist becomes the `SqlPolicy` table allowlist, so SQL
-  cannot reach undocumented tables.
+- la sintaxis JSON y el esquema `sqlagent.lakehouse-manifest/v1` (modelo de pydantic,
+  `extra="forbid"`), con mensajes `ConfigError` legibles;
+- que `duckdb_file` es relativo, no escapa del directorio del manifiesto y existe;
+- que el SHA-256 del archivo es igual a `sha256`; una discrepancia aborta con
+  `lakehouse SHA-256 mismatch: manifest expects …, file has …` y la CLI sale con código 3;
+- que ninguna tabla usa un nombre de sistema reservado (`information_schema`, `sqlite_master`, o
+  cualquier nombre de catálogo `duckdb_*` / `pg_*`);
+- que cada tabla documentada existe en el archivo, y cada columna documentada existe con el tipo
+  declarado (las columnas ausentes o con tipo distinto se rechazan);
+- que la lista blanca de tablas del manifiesto se convierte en la lista blanca de tablas de
+  `SqlPolicy`, de modo que el SQL no pueda llegar a tablas no documentadas.
 
-The database is then opened exactly like the bundled warehouse:
-`read_only=True`, extension autoload/autoinstall disabled, external access off,
-memory/thread limits applied and `lock_configuration=true` last. `sqlagent
-doctor` also honours `--manifest`, so an invalid or tampered artifact is caught
-before the agent starts.
+Después, la base de datos se abre exactamente como el almacén incluido: `read_only=True`, carga y
+autoinstalación de extensiones desactivadas, acceso externo desactivado, límites de memoria e hilos
+aplicados y `lock_configuration=true` al final. `sqlagent doctor` también respeta `--manifest`, de
+modo que un artefacto no válido o alterado se detecta antes de que arranque el agente.
 
-## Limitations
+## Limitaciones
 
-- The benchmark (`sqlagent eval`) is defined only for the bundled SERCOP
-  warehouse; it is not scored against external data.
-- External warehouses have no metrics, glossary or few-shot examples, so
-  retrieval and narration rely on the manifest descriptions only.
-- The manifest describes a DuckDB file, not a live database server; the file
-  must be local and stable while a run is in progress.
-- Only the documented columns are documented in prompts; undocumented columns
-  in the file are rejected by the SQL policy even if they physically exist.
+- El benchmark (`sqlagent eval`) está definido solo para el almacén SERCOP incluido; no se puntúa
+  con datos externos.
+- Los almacenes externos no tienen métricas, glosario ni ejemplos few-shot, así que la recuperación
+  y la narración dependen solo de las descripciones del manifiesto.
+- El manifiesto describe un archivo DuckDB, no un servidor de base de datos en vivo; el archivo debe
+  ser local y permanecer estable mientras dure una ejecución.
+- Solo las columnas documentadas aparecen en los prompts; las columnas no documentadas del archivo
+  se rechazan por la política SQL aunque existan físicamente.

@@ -1,15 +1,23 @@
 # Gitleaks configuration.
 #
 # The record/replay cassettes store a SHA-256 request fingerprint in the
-# ``key`` field (D18). Some of those hex digests match the entropy heuristic of
-# the generic-api-key rule and are not credentials; no prompt or response in a
-# cassette contains a secret. Everything else keeps the default rule set.
+# ``key`` field (D18). Those hex digests match the entropy heuristic of the
+# generic-api-key rule and are not credentials. The allowlist is therefore
+# limited to that one rule, to the cassette paths, and to a match that is exactly
+# a ``"key": "<64 hex>"`` field. Any other finding in those files, and every other
+# rule, still fails the scan.
 [extend]
 useDefault = true
 
-[allowlist]
-description = "SHA-256 request fingerprints in recorded model cassettes (D18)"
+[[allowlists]]
+description = "SHA-256 request fingerprints in recorded model cassettes (D18): the key field only"
+condition = "AND"
+targetRules = ["generic-api-key"]
 paths = [
   '''src/sqlagent/resources/recordings/.*\.jsonl''',
   '''eval/recordings-extra/.*\.jsonl''',
+]
+regexTarget = "match"
+regexes = [
+  '''^key": "[0-9a-f]{64}"$''',
 ]

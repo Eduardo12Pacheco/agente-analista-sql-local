@@ -166,6 +166,77 @@ jobs:
           PYTHONUTF8: "1"
         run: uv run python scripts/smoke_install.py
 
+      - name: README quickstart serve check (POSIX)
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          PYTHONUTF8: "1"
+          SQLAGENT_DATA_DIR: ${{ runner.temp }}/sqlagent-quickstart-data
+        run: |
+          set -euo pipefail
+          uv tool install --force dist/*.whl
+          bin_dir=$(uv tool dir --bin)
+          export PATH="$bin_dir:$PATH"
+          log="$RUNNER_TEMP/serve.log"
+          sqlagent serve --demo > "$log" 2>&1 &
+          serve_pid=$!
+          status=000
+          for _ in $(seq 1 120); do
+            if ! kill -0 "$serve_pid" 2>/dev/null; then
+              cat "$log"
+              echo "sqlagent serve exited before /health answered" >&2
+              exit 1
+            fi
+            status=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:17080/health || true)
+            if [ "$status" = "200" ]; then
+              break
+            fi
+            sleep 1
+          done
+          kill "$serve_pid" 2>/dev/null || true
+          wait "$serve_pid" 2>/dev/null || true
+          echo "GET /health -> $status"
+          if [ "$status" != "200" ]; then
+            cat "$log"
+            exit 1
+          fi
+          uv tool uninstall local-sql-analyst-agent
+
+      - name: README quickstart serve check (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          PYTHONUTF8: "1"
+          SQLAGENT_DATA_DIR: ${{ runner.temp }}\sqlagent-quickstart-data
+        run: |
+          $ErrorActionPreference = "Stop"
+          $wheel = (Get-ChildItem -Path dist -Filter *.whl).FullName
+          uv tool install --force $wheel
+          $cli = Join-Path (uv tool dir --bin) "sqlagent.exe"
+          $log = Join-Path $env:RUNNER_TEMP "serve.log"
+          $serve = Start-Process -FilePath $cli -ArgumentList "serve", "--demo" -PassThru -WindowStyle Hidden -RedirectStandardOutput $log -RedirectStandardError "$log.err"
+          $status = 0
+          for ($i = 0; $i -lt 120; $i++) {
+            if ($serve.HasExited) {
+              Get-Content $log, "$log.err" -ErrorAction SilentlyContinue
+              throw "sqlagent serve exited before /health answered"
+            }
+            try {
+              $status = [int](Invoke-WebRequest -Uri "http://127.0.0.1:17080/health" -UseBasicParsing -TimeoutSec 2).StatusCode
+            } catch {
+              $status = 0
+            }
+            if ($status -eq 200) { break }
+            Start-Sleep -Seconds 1
+          }
+          taskkill /T /F /PID $serve.Id | Out-Null
+          Write-Output "GET /health -> $status"
+          if ($status -ne 200) {
+            Get-Content $log, "$log.err" -ErrorAction SilentlyContinue
+            throw "GET /health returned $status"
+          }
+          uv tool uninstall local-sql-analyst-agent
+
   security:
     name: Security
     runs-on: ubuntu-latest

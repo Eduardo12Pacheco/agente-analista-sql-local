@@ -76,7 +76,7 @@ GitHub Actions se ejecuta en cada envío a `main` y en cada pull request:
 Ejecuta los mismos jobs localmente con `make check`, `make e2e`, `make eval-replay` y `make smoke`.
 La prueba de humo nunca necesita Ollama ni una conexión de red.
 
-## Releases
+## Publicación de versiones
 
 Las versiones se publican mediante etiquetas anotadas:
 

@@ -402,14 +402,22 @@ main {
 
 .conversation {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-5);
   margin-top: var(--space-5);
 }
 
+/*
+ * The track is capped at the column width. Without minmax(0, 1fr) an unwrapped
+ * SQL line sets the track's min-content width and pushes the answer card past
+ * the viewport; wide SQL and tables scroll inside their own containers instead.
+ */
 .run,
 .answer-card {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
+  min-width: 0;
 }
 
 .run {
@@ -551,6 +559,8 @@ main {
   margin: 0;
   padding: var(--space-3);
   overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--code-bg);

@@ -88,11 +88,36 @@ def _ask(page: Page, question: str) -> None:
     page.wait_for_timeout(900)
 
 
-def _focus_chart(page: Page, question: str) -> None:
-    chart = _run_for(page, question).locator(".chart-block").first
-    if chart.count():
-        chart.scroll_into_view_if_needed()
-        page.wait_for_timeout(300)
+ANSWER_MARGIN_PX = 32
+# Smaller top margin keeps the bottom edge of the composer out of the frame.
+ANSWER_TOP_MARGIN_PX = 12
+
+
+def _shot_answer(page: Page, question: str, path: Path) -> None:
+    """Capture the whole answer run with a margin, so the card is never cut off.
+
+    The run is taller than the 800 px viewport, so a viewport shot would crop
+    its header or its bottom edge. The focus ring the app puts on the new answer
+    is cleared first so it does not frame the card in the README image.
+    """
+
+    box = _run_for(page, question).bounding_box()
+    if box is None:
+        raise RuntimeError("answer run is not visible")
+    page.evaluate("() => document.activeElement && document.activeElement.blur()")
+    scroll_y = page.evaluate("() => window.scrollY")
+    side = ANSWER_MARGIN_PX
+    page.screenshot(
+        path=str(path),
+        animations="disabled",
+        full_page=True,
+        clip={
+            "x": box["x"] - side,
+            "y": box["y"] + scroll_y - ANSWER_TOP_MARGIN_PX,
+            "width": box["width"] + 2 * side,
+            "height": box["height"] + ANSWER_TOP_MARGIN_PX + side,
+        },
+    )
 
 
 def _frame_frames(page: Page, tmp: Path, names: list[Path]) -> None:
@@ -127,14 +152,12 @@ def _capture_assets(page: Page, url: str, out_dir: Path, tmp: Path, frames: list
     _frame_frames(page, tmp, frames)
 
     _ask(page, ANSWER_BAR_ES)
-    _focus_chart(page, ANSWER_BAR_ES)
-    _shot(page, out_dir / "hero-light.png")
+    _shot_answer(page, ANSWER_BAR_ES, out_dir / "hero-light.png")
     _frame_frames(page, tmp, frames)
 
     page.locator("#theme-toggle").click()
     page.wait_for_timeout(400)
-    _focus_chart(page, ANSWER_BAR_ES)
-    _shot(page, out_dir / "hero-dark.png")
+    _shot_answer(page, ANSWER_BAR_ES, out_dir / "hero-dark.png")
     _frame_frames(page, tmp, frames)
 
     page.locator("#theme-toggle").click()
@@ -145,8 +168,7 @@ def _capture_assets(page: Page, url: str, out_dir: Path, tmp: Path, frames: list
     page.locator("#lang-toggle").click()
     page.wait_for_load_state("networkidle")
     _ask(page, ANSWER_LINE_EN)
-    _focus_chart(page, ANSWER_LINE_EN)
-    _shot(page, out_dir / "answer-chart.png")
+    _shot_answer(page, ANSWER_LINE_EN, out_dir / "answer-chart.png")
     _frame_frames(page, tmp, frames)
 
     page.locator("#lang-toggle").click()
